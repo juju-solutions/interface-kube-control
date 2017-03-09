@@ -4,7 +4,7 @@ This interface provides communication between master and workers in a
 Kubernetes cluster.
 
 
-# Provides (master)
+# Provides (master side)
 
 ```python
 
@@ -20,7 +20,7 @@ def on_gpu_available(kube_control):
 
 ```
 
-# Requires
+# Requires (worker side)
 
 ```python
 
