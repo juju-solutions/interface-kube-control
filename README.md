@@ -4,7 +4,34 @@ This interface provides communication between master and workers in a
 Kubernetes cluster.
 
 
-# Provides (master side)
+## Provides (kubernetes-master side)
+
+
+### States
+
+* `kube-control.connected`
+
+  Enabled when a worker has joined the relation.
+
+* `kube-control.gpu.available`
+
+  Enabled when a worker has indicated that it is running in gpu mode.
+
+
+### Methods
+
+* `kube_control.set_dns(port, domain, sdn_ip)`
+
+  Sends DNS info to the connected worker(s).
+
+* `kube_control.get_gpu()`
+
+  Returns True if any remote worker is in gpu mode. Typically, the
+  `kube-control.gpu.available` can be used instead of calling this
+  method directly.
+
+
+### Examples
 
 ```python
 
@@ -20,7 +47,33 @@ def on_gpu_available(kube_control):
 
 ```
 
-# Requires (worker side)
+## Requires (kubernetes-worker side)
+
+
+### States
+
+* `kube-control.connected`
+
+  Enabled when a master has joined the relation.
+
+* `kube-control.dns.available`
+
+  Enabled when DNS info is available from the master.
+
+
+### Methods
+
+* `kube_control.get_dns()`
+
+  Returns a dictionary of DNS info sent by the master. The keys in the
+  dict are: domain, private-address, sdn-ip, port.
+
+* `kube_control.set_gpu(enabled=True)`
+
+  Tell the master that we are gpu-enabled.
+
+
+### Examples
 
 ```python
 
