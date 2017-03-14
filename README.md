@@ -15,7 +15,7 @@ Kubernetes cluster.
 
 * `kube-control.gpu.available`
 
-  Enabled when a worker has indicated that it is running in gpu mode.
+  Enabled when any worker has indicated that it is running in gpu mode.
 
 
 ### Methods
@@ -23,12 +23,6 @@ Kubernetes cluster.
 * `kube_control.set_dns(port, domain, sdn_ip)`
 
   Sends DNS info to the connected worker(s).
-
-* `kube_control.get_gpu()`
-
-  Returns True if any remote worker is in gpu mode. Typically, the
-  `kube-control.gpu.available` can be used instead of calling this
-  method directly.
 
 
 ### Examples

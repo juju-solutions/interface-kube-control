@@ -27,7 +27,7 @@ class KubeControlProvider(RelationBase):
         conv = self.conversation()
         conv.set_state('{relation_name}.connected')
 
-        if self.get_gpu():
+        if self._get_gpu():
             conv.set_state('{relation_name}.gpu.available')
         else:
             conv.remove_state('{relation_name}.gpu.available')
@@ -42,7 +42,7 @@ class KubeControlProvider(RelationBase):
         conv.remove_state('{relation_name}.gpu.available')
 
     def set_dns(self, port, domain, sdn_ip):
-        """Send DNS info to the remote unit.
+        """Send DNS info to the remote units.
 
         We'll need the port, domain, and sdn_ip of the dns service. If
         sdn_ip is not required in your deployment, the units private-ip
@@ -54,12 +54,14 @@ class KubeControlProvider(RelationBase):
             'domain': domain,
             'sdn-ip': sdn_ip,
         }
-        conv = self.conversation()
-        conv.set_remote(data=credentials)
+        for conv in self.conversations():
+            conv.set_remote(data=credentials)
 
-    def get_gpu(self):
-        """Return True if the remote worker is gpu-enabled.
+    def _get_gpu(self):
+        """Return True if any remote worker is gpu-enabled.
 
         """
-        conv = self.conversation()
-        return conv.get_remote('gpu', False)
+        for conv in self.conversations():
+            if conv.get_remote('gpu', False):
+                return True
+        return False
