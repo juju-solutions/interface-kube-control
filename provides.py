@@ -15,6 +15,8 @@ from charms.reactive import RelationBase
 from charms.reactive import hook
 from charms.reactive import scopes
 
+from charmhelpers.core import hookenv
+
 
 class KubeControlProvider(RelationBase):
     """Implements the kubernetes-master side of the kube-control interface.
@@ -27,6 +29,7 @@ class KubeControlProvider(RelationBase):
         conv = self.conversation()
         conv.set_state('{relation_name}.connected')
 
+        hookenv.log('Checking for gpu-enabled workers')
         if self._get_gpu():
             conv.set_state('{relation_name}.gpu.available')
         else:
@@ -62,6 +65,7 @@ class KubeControlProvider(RelationBase):
 
         """
         for conv in self.conversations():
-            if conv.get_remote('gpu', False):
+            if conv.get_remote('gpu') == 'True':
+                hookenv.log('Unit {} has gpu enabled'.format(conv.scope))
                 return True
         return False

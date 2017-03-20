@@ -15,6 +15,8 @@ from charms.reactive import RelationBase
 from charms.reactive import hook
 from charms.reactive import scopes
 
+from charmhelpers.core import hookenv
+
 
 class KubeControlRequireer(RelationBase):
     """Implements the kubernetes-worker side of the kube-control interface.
@@ -67,5 +69,6 @@ class KubeControlRequireer(RelationBase):
         """Tell the master that we're gpu-enabled (or not).
 
         """
+        hookenv.log('Setting gpu={} on kube-control relation'.format(enabled))
         conv = self.conversation()
         conv.set_remote(gpu=enabled)
