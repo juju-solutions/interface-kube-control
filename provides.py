@@ -37,12 +37,12 @@ class KubeControlProvider(RelationBase):
 
     @hook('{provides:kube-control}-relation-{broken,departed}')
     def departed(self):
-        """Remove all states.
+        """Remove all states when the last remote unit leaves the relation.
 
         """
-        conv = self.conversation()
-        conv.remove_state('{relation_name}.connected')
-        conv.remove_state('{relation_name}.gpu.available')
+        if not self.conversations():
+            self.remove_state('{relation_name}.connected')
+            self.remove_state('{relation_name}.gpu.available')
 
     def set_dns(self, port, domain, sdn_ip):
         """Send DNS info to the remote units.
