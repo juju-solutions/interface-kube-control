@@ -59,7 +59,8 @@ class KubeControlRequireer(RelationBase):
 
         return {
             'kubelet_token': conv.get_remote('kubelet_token'),
-            'proxy_token': conv.get_remote('proxy_token')
+            'proxy_token': conv.get_remote('proxy_token'),
+            'client_token': conv.get_remote('client_token')
         }
 
     def get_dns(self):
