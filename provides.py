@@ -35,6 +35,9 @@ class KubeControlProvider(RelationBase):
         else:
             conv.remove_state('{relation_name}.gpu.available')
 
+        if self._has_auth_request():
+            conv.set_state('{relation_name}.auth.requested')
+
     @hook('{provides:kube-control}-relation-{broken,departed}')
     def departed(self):
         """Remove all states.
@@ -60,6 +63,18 @@ class KubeControlProvider(RelationBase):
         for conv in self.conversations():
             conv.set_remote(data=credentials)
 
+    def auth_user(self):
+        """ return the kubelet_user value on the wire from the requestor """
+        conv = self.conversation()
+        return (conv.scope, conv.get_remote('kubelet_user'))
+
+    def sign_auth_request(self, kubelet_token, proxy_token):
+        """Send authorization tokens to the requesting unit """
+        conv = self.conversation()
+        conv.set_remote(data={'kubelet_token': kubelet_token,
+                              'proxy_token': proxy_token})
+        conv.remove_state('{relation_name}.auth.requested')
+
     def _get_gpu(self):
         """Return True if any remote worker is gpu-enabled.
 
@@ -69,3 +84,12 @@ class KubeControlProvider(RelationBase):
                 hookenv.log('Unit {} has gpu enabled'.format(conv.scope))
                 return True
         return False
+
+    def _has_auth_request(self):
+        """Check if there's a kubelet user on the wire requesting auth. This
+        action implies requested kube-proxy auth as well, as kube-proxy should
+        be run everywhere there is a kubelet.
+        """
+        conv = self.conversation()
+        if conv.get_remote('kubelet_user'):
+            return conv.get_remote('kubelet_user')
