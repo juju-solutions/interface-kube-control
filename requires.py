@@ -37,11 +37,6 @@ class KubeControlRequireer(RelationBase):
         else:
             conv.remove_state('{relation_name}.dns.available')
 
-        if self._has_auth_credentials():
-            conv.set_state('{relation_name}.auth.available')
-        else:
-            conv.remove_state('{relation_name}.auth.available')
-
     @hook('{requires:kube-control}-relation-{broken,departed}')
     def departed(self):
         """Remove all states.
@@ -50,17 +45,6 @@ class KubeControlRequireer(RelationBase):
         conv = self.conversation()
         conv.remove_state('{relation_name}.connected')
         conv.remove_state('{relation_name}.dns.available')
-
-    def get_auth_credentials(self):
-        """ Return the authentication credentials.
-
-        """
-        conv = self.conversation()
-
-        return {
-            'kubelet_token': conv.get_remote('kubelet_token'),
-            'proxy_token': conv.get_remote('proxy_token')
-        }
 
     def get_dns(self):
         """Return DNS info provided by the master.
@@ -81,12 +65,6 @@ class KubeControlRequireer(RelationBase):
         """
         return all(self.get_dns().values())
 
-    def set_auth_request(self, kubelet):
-        """ Tell the master that we are requesting auth, and to use this
-        hostname for the kubelet system account """
-        conv = self.conversation()
-        conv.set_remote(data={'kubelet_user': kubelet})
-
     def set_gpu(self, enabled=True):
         """Tell the master that we're gpu-enabled (or not).
 
@@ -94,9 +72,3 @@ class KubeControlRequireer(RelationBase):
         hookenv.log('Setting gpu={} on kube-control relation'.format(enabled))
         conv = self.conversation()
         conv.set_remote(gpu=enabled)
-
-    def _has_auth_credentials(self):
-        """Predicate method to signal we have authentication credentials """
-        conv = self.conversation()
-        if conv.get_remote('kubelet_token') and conv.get_remote('proxy_token'):
-            return True
