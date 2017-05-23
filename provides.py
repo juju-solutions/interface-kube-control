@@ -66,7 +66,8 @@ class KubeControlProvider(RelationBase):
     def auth_user(self):
         """ return the kubelet_user value on the wire from the requestor """
         conv = self.conversation()
-        return (conv.scope, conv.get_remote('kubelet_user'))
+        return (conv.scope, {'user': conv.get_remote('kubelet_user'),
+                             'group': conv.get_remote('auth_group')})
 
     def sign_auth_request(self, kubelet_token, proxy_token, client_token):
         """Send authorization tokens to the requesting unit """
