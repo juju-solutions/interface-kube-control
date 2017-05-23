@@ -82,11 +82,16 @@ class KubeControlRequireer(RelationBase):
         """
         return all(self.get_dns().values())
 
-    def set_auth_request(self, kubelet):
+    def set_auth_request(self, kubelet, group='system:nodes'):
         """ Tell the master that we are requesting auth, and to use this
-        hostname for the kubelet system account """
+        hostname for the kubelet system account.
+
+        Param groups - Determines the level of eleveted privleges of the
+        requested user. Can be overridden to request sudo level access on the
+        cluster via changing to system:masters """
         conv = self.conversation()
-        conv.set_remote(data={'kubelet_user': kubelet})
+        conv.set_remote(data={'kubelet_user': kubelet,
+                              'auth_group': group})
 
     def set_gpu(self, enabled=True):
         """Tell the master that we're gpu-enabled (or not).
