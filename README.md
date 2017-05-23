@@ -18,12 +18,27 @@ Kubernetes cluster.
   Enabled when any worker has indicated that it is running in gpu mode.
 
 
+* `kube-control.auth.requested`
+
+  Enabled when an authentication credential is requested. This state is
+  temporary and will be removed once the units authentication request has
+  been fulfilled.
+
 ### Methods
 
 * `kube_control.set_dns(port, domain, sdn_ip)`
 
   Sends DNS info to the connected worker(s).
 
+
+* `kube_control.auth_user()`
+
+  Returns the requested username and group requested for authentication.
+
+* `kube_control.sign_auth_request(kubelet_token, proxy_token, client_token)`
+
+  Sends authentication tokens to the requesting unit for the requested user
+  and kube-proxy services.
 
 ### Examples
 
@@ -54,6 +69,9 @@ def on_gpu_available(kube_control):
 
   Enabled when DNS info is available from the master.
 
+* `kube-control.auth.available`
+
+  Enabled when authentication credentials are present from the master.
 
 ### Methods
 
@@ -66,6 +84,14 @@ def on_gpu_available(kube_control):
 
   Tell the master that we are gpu-enabled.
 
+*  `kube_control.get_auth_credentials()`
+
+  Returns a dict with the returned authentication credentials.
+
+*  `set_auth_request(kubelet, group='system:nodes')`
+
+  Issue an authentication request against the master to receive token based
+  auth credentials in return.
 
 ### Examples
 
@@ -84,5 +110,19 @@ def on_dns_available(kube_control):
 def send_gpu(kube_control):
     # Tell the master that we're gpu-enabled
     kube_control.set_gpu(True)
+
+@when('kube-control.auth.available')
+def display_auth_tokens(kube_control):
+    # Remote side has sent auth info
+    auth = kube_control.get_auth_credentials()
+    print(auth['kubelet_token'])
+    print(auth['proxy_token'])
+    print(auth['client_token'])
+
+@when('kube-control.connected')
+@when_not('kube-control.auth.available')
+def request_auth_credentials(kube_control):
+    # Request an admin user with sudo level access named 'root'
+    kube_control.set_auth_request('root', group='system:masters')
 
 ```
