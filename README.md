@@ -17,6 +17,10 @@ Kubernetes cluster.
 
   Enabled when any worker has indicated that it is running in gpu mode.
 
+* `kube-control.departed`
+
+  Enabled when any worker has indicated that it is leaving the cluster.
+
 
 * `kube-control.auth.requested`
 
@@ -40,6 +44,12 @@ Kubernetes cluster.
   Sends authentication tokens to the requesting unit for the requested user
   and kube-proxy services.
 
+* `kube_control.flush_departed()`
+
+  Returns the unit departing the kube_control relationship so you can do any
+  post removal cleanup. Such as removing authentication tokens for the unit.
+  Invoking this method will also remove the `kube-control.departed` state
+
 ### Examples
 
 ```python
@@ -53,6 +63,14 @@ def send_dns(kube_control):
 def on_gpu_available(kube_control):
     # The remote side is gpu-enable, handle it somehow
     assert kube_control.get_gpu() == True
+
+
+@when('kube-control.departed')
+@when('leadership.is_leader')
+def flush_auth_for_departed(kube_control):
+    ''' Unit has left the cluster and needs to have its authentication
+    tokens removed from the token registry '''
+    departing_unit = kube_control.flush_departed()
 
 ```
 
