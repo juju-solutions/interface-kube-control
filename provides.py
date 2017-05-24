@@ -38,7 +38,7 @@ class KubeControlProvider(RelationBase):
         if self._has_auth_request():
             conv.set_state('{relation_name}.auth.requested')
 
-    @hook('{provides:kube-control}-relation-{broken,departed}')
+    @hook('{provides:kube-control}-relation-departed')
     def departed(self):
         """Remove all states.
 
@@ -46,6 +46,15 @@ class KubeControlProvider(RelationBase):
         conv = self.conversation()
         conv.remove_state('{relation_name}.connected')
         conv.remove_state('{relation_name}.gpu.available')
+        conv.set_state('{relation_name}.departed')
+
+    def flush_departed(self):
+        """Remove the signal state that we have a unit departing the
+        relationship. Additionally return the unit departing so the host can
+        do any cleanup logic required. """
+        conv = self.conversation()
+        conv.remove_state('{relation_name}.departed')
+        return conv.scope
 
     def set_dns(self, port, domain, sdn_ip):
         """Send DNS info to the remote units.
