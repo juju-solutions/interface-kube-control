@@ -37,11 +37,12 @@ Kubernetes cluster.
 
 * `kube_control.auth_user()`
 
-  Returns the requested username and group requested for authentication.
+  Returns a list of the requested username and group requested for
+  authentication.
 
-* `kube_control.sign_auth_request(kubelet_token, proxy_token, client_token)`
+* `kube_control.sign_auth_request(scope, kubelet_token, proxy_token, client_token)`
 
-  Sends authentication tokens to the requesting unit for the requested user
+  Sends authentication tokens to the unit scope for the requested user
   and kube-proxy services.
 
 * `kube_control.flush_departed()`
