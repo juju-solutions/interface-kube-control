@@ -76,11 +76,13 @@ class KubeControlProvider(RelationBase):
         """ return the kubelet_user value on the wire from the requestors """
         requests = []
         for conv in self.conversations():
-            requests.append((conv.scope, {'user': conv.get_remote('kubelet_user'),
+            requests.append((conv.scope,
+                            {'user': conv.get_remote('kubelet_user'),
                              'group': conv.get_remote('auth_group')}))
         return requests
 
-    def sign_auth_request(self, scope, kubelet_token, proxy_token, client_token):
+    def sign_auth_request(self, scope, kubelet_token, proxy_token,
+                          client_token):
         """Send authorization tokens to the requesting unit """
         conv = self.conversation(scope)
         conv.set_remote(data={'kubelet_token': kubelet_token,
