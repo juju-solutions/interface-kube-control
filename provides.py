@@ -46,6 +46,7 @@ class KubeControlProvider(RelationBase):
         conv = self.conversation()
         conv.remove_state('{relation_name}.connected')
         conv.remove_state('{relation_name}.gpu.available')
+        conv.remove_state('{relation_name}.auth.requested')
         conv.set_state('{relation_name}.departed')
 
     def flush_departed(self):
