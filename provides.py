@@ -82,11 +82,12 @@ class KubeControlProvider(RelationBase):
                              'group': conv.get_remote('auth_group')}))
         return requests
 
-    def sign_auth_request(self, scope, kubelet_token, proxy_token,
+    def sign_auth_request(self, scope, user, kubelet_token, proxy_token,
                           client_token):
         """Send authorization tokens to the requesting unit """
         conv = self.conversation(scope)
-        conv.set_remote(data={'kubelet_token': kubelet_token,
+        conv.set_remote(data={'user': user,
+                              'kubelet_token': kubelet_token,
                               'proxy_token': proxy_token,
                               'client_token': client_token})
         conv.remove_state('{relation_name}.auth.requested')

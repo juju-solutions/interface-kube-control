@@ -58,6 +58,7 @@ class KubeControlRequireer(RelationBase):
         conv = self.conversation()
 
         return {
+            'user': conv.get_remote('user'),
             'kubelet_token': conv.get_remote('kubelet_token'),
             'proxy_token': conv.get_remote('proxy_token'),
             'client_token': conv.get_remote('client_token')
