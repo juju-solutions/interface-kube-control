@@ -10,6 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
 
 from charms.reactive import RelationBase
 from charms.reactive import hook
@@ -51,18 +52,22 @@ class KubeControlRequireer(RelationBase):
         conv.remove_state('{relation_name}.connected')
         conv.remove_state('{relation_name}.dns.available')
 
-    def get_auth_credentials(self):
+    def get_auth_credentials(self, user):
         """ Return the authentication credentials.
 
         """
         conv = self.conversation()
 
-        return {
-            'user': conv.get_remote('user'),
-            'kubelet_token': conv.get_remote('kubelet_token'),
-            'proxy_token': conv.get_remote('proxy_token'),
-            'client_token': conv.get_remote('client_token')
-        }
+        all_creds = json.loads(conv.get_remote('creds'))
+        if user in all_creds:
+            return {
+                'user': user,
+                'kubelet_token': all_creds[user]['kubelet_token'],
+                'proxy_token': all_creds[user]['proxy_token'],
+                'client_token': all_creds[user]['client_token']
+            }
+        else:
+            return None
 
     def get_dns(self):
         """Return DNS info provided by the master.
@@ -105,5 +110,5 @@ class KubeControlRequireer(RelationBase):
     def _has_auth_credentials(self):
         """Predicate method to signal we have authentication credentials """
         conv = self.conversation()
-        if conv.get_remote('kubelet_token') and conv.get_remote('proxy_token'):
+        if conv.get_remote('creds'):
             return True
