@@ -40,7 +40,7 @@ Kubernetes cluster.
   Returns a list of the requested username and group requested for
   authentication.
 
-* `kube_control.sign_auth_request(scope, kubelet_token, proxy_token, client_token)`
+* `kube_control.sign_auth_request(scope, user, kubelet_token, proxy_token, client_token)`
 
   Sends authentication tokens to the unit scope for the requested user
   and kube-proxy services.
@@ -103,9 +103,9 @@ def flush_auth_for_departed(kube_control):
 
   Tell the master that we are gpu-enabled.
 
-*  `kube_control.get_auth_credentials()`
+*  `kube_control.get_auth_credentials(user)`
 
-  Returns a dict with the returned authentication credentials.
+  Returns a dict with the users authentication credentials.
 
 *  `set_auth_request(kubelet, group='system:nodes')`
 
@@ -133,7 +133,7 @@ def send_gpu(kube_control):
 @when('kube-control.auth.available')
 def display_auth_tokens(kube_control):
     # Remote side has sent auth info
-    auth = kube_control.get_auth_credentials()
+    auth = kube_control.get_auth_credentials('root')
     print(auth['kubelet_token'])
     print(auth['proxy_token'])
     print(auth['client_token'])

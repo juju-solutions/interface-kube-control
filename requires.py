@@ -57,8 +57,11 @@ class KubeControlRequireer(RelationBase):
 
         """
         conv = self.conversation()
+        remote_creds = conv.get_remote('creds')
+        if not remote_creds:
+            return None
 
-        all_creds = json.loads(conv.get_remote('creds'))
+        all_creds = json.loads(remote_creds)
         if user in all_creds:
             return {
                 'user': user,
