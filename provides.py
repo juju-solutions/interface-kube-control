@@ -11,51 +11,76 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from charms.reactive import RelationBase
-from charms.reactive import hook
-from charms.reactive import scopes
+from charms.reactive import Endpoint
+from charms.reactive import when
+from charms.reactive import when_not
+from charms.reactive import set_flag
+from charms.reactive import clear_flag
+from charms.reactive import toggle_flag
 
 from charmhelpers.core import hookenv
 
 
-class KubeControlProvider(RelationBase):
+# TODO: update charms and remove legacy flags
+class KubeControlProvider(Endpoint):
     """Implements the kubernetes-master side of the kube-control interface.
 
     """
-    scope = scopes.UNIT
+    @when('endpoint.{relation_name}.joined')
+    def legacy_flag_connected(self):
+        set_flag(self.flag('{relation_name}.connected'))
 
-    @hook('{provides:kube-control}-relation-{joined,changed}')
-    def joined_or_changed(self):
-        conv = self.conversation()
-        conv.set_state('{relation_name}.connected')
+    @when('endpoint.{relation_name}.departed')
+    def legacy_flag_departed(self):
+        set_flag(self.flag('{relation_name}.departed'))
 
-        hookenv.log('Checking for gpu-enabled workers')
-        if self._get_gpu():
-            conv.set_state('{relation_name}.gpu.available')
-        else:
-            conv.remove_state('{relation_name}.gpu.available')
-
-        if self._has_auth_request():
-            conv.set_state('{relation_name}.auth.requested')
-
-    @hook('{provides:kube-control}-relation-departed')
-    def departed(self):
-        """Remove all states.
+    @when('endpoint.{relation_name}.changed.gpu')
+    def check_gpu(self):
+        """Set ``{relation_name}.gpu.available`` if any remote worker
+        is gpu-enabled.
 
         """
-        conv = self.conversation()
-        conv.remove_state('{relation_name}.connected')
-        conv.remove_state('{relation_name}.gpu.available')
-        conv.remove_state('{relation_name}.auth.requested')
-        conv.set_state('{relation_name}.departed')
+        clear_flag(self.flag('endpoint.{relation_name}.changed.gpu'))
+        hookenv.log('Checking for gpu-enabled workers')
+
+        # json_receive automatically decodes bool values, but existing
+        # relations may have the older string form
+        gpu_enabled = self.all_units.json_receive['gpu'] in (True, 'True')
+        toggle_flag(self.flag('endpoint.{relation_name}.gpu.available'),
+                    should_set=gpu_enabled)
+        toggle_flag(self.flag('{relation_name}.gpu.available'),  # legacy flag
+                    should_set=gpu_enabled)
+
+    @when('endpoint.{relation_name}.changed.kubelet_user')
+    def check_auth_request(self):
+        """Check if there's a kubelet user on the wire requesting auth. This
+        action implies requested kube-proxy auth as well, as kube-proxy should
+        be run everywhere there is a kubelet.
+        """
+        clear_flag(self.flag('endpoint.{relation_name}.changed.kubelet_user'))
+        auth_requested = self.all_units.receive['kubelet_user']
+        toggle_flag(self.flag('endpoint.{relation_name}.auth.requested'),
+                    should_set=auth_requested)
+        toggle_flag(self.flag('{relation_name}.auth.requested'),  # legacy flag
+                    should_set=auth_requested)
+
+    @when_not('endpoint.{relation_name}.joined')
+    def broken(self):
+        """Remove all flags.
+
+        """
+        clear_flag(self.flag('endpoint.{relation_name}.gpu.available'))
+        clear_flag(self.flag('endpoint.{relation_name}.auth.requested'))
+        clear_flag(self.flag('{relation_name}.connected'))  # legacy flag
+        clear_flag(self.flag('{relation_name}.gpu.available'))  # legacy flag
+        clear_flag(self.flag('{relation_name}.auth.requested'))  # legacy flag
 
     def flush_departed(self):
         """Remove the signal state that we have a unit departing the
         relationship. Additionally return the unit departing so the host can
         do any cleanup logic required. """
-        conv = self.conversation()
-        conv.remove_state('{relation_name}.departed')
-        return conv.scope
+        clear_flag(self.flag('endpoint.{relation_name}.departed'))
+        clear_flag(self.flag('{relation_name}.departed'))  # legacy flag
 
     def set_dns(self, port, domain, sdn_ip):
         """Send DNS info to the remote units.
@@ -65,47 +90,34 @@ class KubeControlProvider(RelationBase):
         is available implicitly.
 
         """
-        credentials = {
-            'port': port,
-            'domain': domain,
-            'sdn-ip': sdn_ip,
-        }
-        for conv in self.conversations():
-            conv.set_remote(data=credentials)
+        for relation in self.relations:
+            relation.send['port'] = port
+            relation.send['domain'] = domain
+            relation.send['sdn-ip'] = sdn_ip
 
     def auth_user(self):
         """ return the kubelet_user value on the wire from the requestors """
         requests = []
-        for conv in self.conversations():
-            requests.append((conv.scope,
-                            {'user': conv.get_remote('kubelet_user'),
-                             'group': conv.get_remote('auth_group')}))
+        for unit in self.all_units:
+            # NB: These values aren't actually used by the master, and we
+            # ought to just send the relations (or relation_ids).
+            user = unit.receive['kubelet_user']
+            group = unit.receive['auth_group']
+            if not (user and group):
+                continue
+            requests.append((unit, {'user': user,
+                                    'group': group}))
         return requests
 
-    def sign_auth_request(self, scope, kubelet_token, proxy_token,
+    def sign_auth_request(self, unit, kubelet_token, proxy_token,
                           client_token):
         """Send authorization tokens to the requesting unit """
-        conv = self.conversation(scope)
-        conv.set_remote(data={'kubelet_token': kubelet_token,
-                              'proxy_token': proxy_token,
-                              'client_token': client_token})
-        conv.remove_state('{relation_name}.auth.requested')
-
-    def _get_gpu(self):
-        """Return True if any remote worker is gpu-enabled.
-
-        """
-        for conv in self.conversations():
-            if conv.get_remote('gpu') == 'True':
-                hookenv.log('Unit {} has gpu enabled'.format(conv.scope))
-                return True
-        return False
-
-    def _has_auth_request(self):
-        """Check if there's a kubelet user on the wire requesting auth. This
-        action implies requested kube-proxy auth as well, as kube-proxy should
-        be run everywhere there is a kubelet.
-        """
-        conv = self.conversation()
-        if conv.get_remote('kubelet_user'):
-            return conv.get_remote('kubelet_user')
+        # NB: You can actually only send data at the relation level, meaning
+        # all units of that relation receive the same data.  So, all workers
+        # are going to receive the same tokens, unless we send structrued
+        # data keyed by unit name.
+        unit.relation.send.update({'kubelet_token': kubelet_token,
+                                   'proxy_token': proxy_token,
+                                   'client_token': client_token})
+        clear_flag(self.flag('endpoint.{relation_name}.auth.requested'))
+        clear_flag(self.flag('{relation_name}.auth.requested'))  # legacy flag
