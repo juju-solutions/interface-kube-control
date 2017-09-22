@@ -61,9 +61,9 @@ class KubeControlRequireer(Endpoint):
 
         """
         return {
-            'kubelet_token': self.all_units.receive['kubelet_token'],
-            'proxy_token': self.all_units.receive['proxy_token'],
-            'client_token': self.all_units.receive['client_token'],
+            'kubelet_token': self.all_units.received['kubelet_token'],
+            'proxy_token': self.all_units.received['proxy_token'],
+            'client_token': self.all_units.received['client_token'],
         }
 
     def get_dns(self):
@@ -71,10 +71,10 @@ class KubeControlRequireer(Endpoint):
 
         """
         return {
-            'private-address': self.all_units.receive['private-address'],
-            'port': self.all_units.receive['port'],
-            'domain': self.all_units.receive['domain'],
-            'sdn-ip': self.all_units.receive['sdn-ip'],
+            'private-address': self.all_units.received['private-address'],
+            'port': self.all_units.received['port'],
+            'domain': self.all_units.received['domain'],
+            'sdn-ip': self.all_units.received['sdn-ip'],
         }
 
     def dns_ready(self):
@@ -100,7 +100,7 @@ class KubeControlRequireer(Endpoint):
         """
         hookenv.log('Setting gpu={} on kube-control relation'.format(enabled))
         for relation in self.relations:  # should only ever be one relation
-            relation.json_send['gpu'] = enabled
+            relation.send_json['gpu'] = enabled
 
     def _has_auth_credentials(self):
         """Predicate method to signal we have authentication credentials """

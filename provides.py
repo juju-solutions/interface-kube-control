@@ -43,9 +43,9 @@ class KubeControlProvider(Endpoint):
         clear_flag(self.flag('endpoint.{relation_name}.changed.gpu'))
         hookenv.log('Checking for gpu-enabled workers')
 
-        # json_receive automatically decodes bool values, but existing
+        # received_json automatically decodes bool values, but existing
         # relations may have the older string form
-        gpu_enabled = self.all_units.json_receive['gpu'] in (True, 'True')
+        gpu_enabled = self.all_units.received_json['gpu'] in (True, 'True')
         toggle_flag(self.flag('endpoint.{relation_name}.gpu.available'),
                     should_set=gpu_enabled)
         toggle_flag(self.flag('{relation_name}.gpu.available'),  # legacy flag
@@ -58,7 +58,7 @@ class KubeControlProvider(Endpoint):
         be run everywhere there is a kubelet.
         """
         clear_flag(self.flag('endpoint.{relation_name}.changed.kubelet_user'))
-        auth_requested = self.all_units.receive['kubelet_user']
+        auth_requested = self.all_units.received['kubelet_user']
         toggle_flag(self.flag('endpoint.{relation_name}.auth.requested'),
                     should_set=auth_requested)
         toggle_flag(self.flag('{relation_name}.auth.requested'),  # legacy flag
@@ -101,8 +101,8 @@ class KubeControlProvider(Endpoint):
         for unit in self.all_units:
             # NB: These values aren't actually used by the master, and we
             # ought to just send the relations (or relation_ids).
-            user = unit.receive['kubelet_user']
-            group = unit.receive['auth_group']
+            user = unit.received['kubelet_user']
+            group = unit.received['auth_group']
             if not (user and group):
                 continue
             requests.append((unit, {'user': user,
