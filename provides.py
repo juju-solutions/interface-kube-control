@@ -60,7 +60,7 @@ class KubeControlProvider(RelationBase):
         conv = self.conversation()
         conv.remove_state('{relation_name}.departed')
         all_creds = db.get('creds')
-        for user,cred in list(all_creds.items()):
+        for user, cred in list(all_creds.items()):
             if cred['scope'] == conv.scope:
                 all_creds.pop(user)
         return conv.scope
@@ -94,10 +94,10 @@ class KubeControlProvider(RelationBase):
                           client_token):
         """Send authorization tokens to the requesting unit """
         conv = self.conversation(scope)
-        cred={'scope': scope,
-              'kubelet_token': kubelet_token,
-              'proxy_token': proxy_token,
-              'client_token': client_token}
+        cred = {'scope': scope,
+                'kubelet_token': kubelet_token,
+                'proxy_token': proxy_token,
+                'client_token': client_token}
         if not db.get('creds'):
             db.set('creds', {})
 
