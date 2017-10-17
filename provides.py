@@ -63,6 +63,7 @@ class KubeControlProvider(RelationBase):
         for user, cred in list(all_creds.items()):
             if cred['scope'] == conv.scope:
                 all_creds.pop(user)
+                db.set('creds', all_creds)
         return conv.scope
 
     def set_dns(self, port, domain, sdn_ip):
