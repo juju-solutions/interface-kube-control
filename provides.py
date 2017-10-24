@@ -10,12 +10,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
 
 from charms.reactive import RelationBase
 from charms.reactive import hook
 from charms.reactive import scopes
 
-from charmhelpers.core import hookenv
+from charmhelpers.core import hookenv, unitdata
+
+
+db = unitdata.kv()
 
 
 class KubeControlProvider(RelationBase):
@@ -55,6 +59,11 @@ class KubeControlProvider(RelationBase):
         do any cleanup logic required. """
         conv = self.conversation()
         conv.remove_state('{relation_name}.departed')
+        all_creds = db.get('creds')
+        for user, cred in list(all_creds.items()):
+            if cred['scope'] == conv.scope:
+                all_creds.pop(user)
+                db.set('creds', all_creds)
         return conv.scope
 
     def set_dns(self, port, domain, sdn_ip):
@@ -82,13 +91,21 @@ class KubeControlProvider(RelationBase):
                              'group': conv.get_remote('auth_group')}))
         return requests
 
-    def sign_auth_request(self, scope, kubelet_token, proxy_token,
+    def sign_auth_request(self, scope, user, kubelet_token, proxy_token,
                           client_token):
         """Send authorization tokens to the requesting unit """
         conv = self.conversation(scope)
-        conv.set_remote(data={'kubelet_token': kubelet_token,
-                              'proxy_token': proxy_token,
-                              'client_token': client_token})
+        cred = {'scope': scope,
+                'kubelet_token': kubelet_token,
+                'proxy_token': proxy_token,
+                'client_token': client_token}
+        if not db.get('creds'):
+            db.set('creds', {})
+
+        all_creds = db.get('creds')
+        all_creds[user] = cred
+        db.set('creds', all_creds)
+        conv.set_remote(data={'creds': json.dumps(all_creds)})
         conv.remove_state('{relation_name}.auth.requested')
 
     def _get_gpu(self):
