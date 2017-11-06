@@ -53,19 +53,6 @@ class KubeControlProvider(RelationBase):
         conv.remove_state('{relation_name}.auth.requested')
         conv.set_state('{relation_name}.departed')
 
-    def flush_departed(self):
-        """Remove the signal state that we have a unit departing the
-        relationship. Additionally return the unit departing so the host can
-        do any cleanup logic required. """
-        conv = self.conversation()
-        conv.remove_state('{relation_name}.departed')
-        all_creds = db.get('creds')
-        for user, cred in list(all_creds.items()):
-            if cred['scope'] == conv.scope:
-                all_creds.pop(user)
-                db.set('creds', all_creds)
-        return conv.scope
-
     def set_dns(self, port, domain, sdn_ip):
         """Send DNS info to the remote units.
 
