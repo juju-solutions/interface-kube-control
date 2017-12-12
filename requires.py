@@ -80,17 +80,16 @@ class KubeControlRequireer(RelationBase):
         conv = self.conversation()
 
         return {
-            'private-address': conv.get_remote('private-address'),
             'port': conv.get_remote('port'),
             'domain': conv.get_remote('domain'),
             'sdn-ip': conv.get_remote('sdn-ip'),
+            'enable-kube-dns': conv.get_remote('enable-kube-dns'),
         }
 
     def dns_ready(self):
-        """Return True if we have all DNS info from the master.
-
-        """
-        return all(self.get_dns().values())
+        """Return True if we have all DNS info from the master."""
+        keys = ['port', 'domain', 'sdn-ip', 'enable-kube-dns']
+        return set(self.get_dns().keys()) == set(keys)
 
     def set_auth_request(self, kubelet, group='system:nodes'):
         """ Tell the master that we are requesting auth, and to use this
