@@ -53,7 +53,7 @@ class KubeControlProvider(RelationBase):
         conv.remove_state('{relation_name}.auth.requested')
         conv.set_state('{relation_name}.departed')
 
-    def set_dns(self, port, domain, sdn_ip):
+    def set_dns(self, port, domain, sdn_ip, enable_kube_dns):
         """Send DNS info to the remote units.
 
         We'll need the port, domain, and sdn_ip of the dns service. If
@@ -65,6 +65,7 @@ class KubeControlProvider(RelationBase):
             'port': port,
             'domain': domain,
             'sdn-ip': sdn_ip,
+            'enable-kube-dns': enable_kube_dns,
         }
         for conv in self.conversations():
             conv.set_remote(data=credentials)
