@@ -17,10 +17,13 @@ Kubernetes cluster.
 
   Enabled when any worker has indicated that it is running in gpu mode.
 
+* `kube-control.dns.available`
+
+  Enabled when all workers has indicated that have dns configured.
+
 * `kube-control.departed`
 
   Enabled when any worker has indicated that it is leaving the cluster.
-
 
 * `kube-control.auth.requested`
 
@@ -30,7 +33,7 @@ Kubernetes cluster.
 
 ### Methods
 
-* `kube_control.set_dns(port, domain, sdn_ip)`
+* `kube_control.set_dns(port, domain, sdn_ip, enable_kube_dns)`
 
   Sends DNS info to the connected worker(s).
 
@@ -45,11 +48,6 @@ Kubernetes cluster.
   Sends authentication tokens to the unit scope for the requested user
   and kube-proxy services.
 
-* `kube_control.flush_departed()`
-
-  Returns the unit departing the kube_control relationship so you can do any
-  post removal cleanup. Such as removing authentication tokens for the unit.
-  Invoking this method will also remove the `kube-control.departed` state
 
 ### Examples
 
@@ -58,20 +56,13 @@ Kubernetes cluster.
 @when('kube-control.connected')
 def send_dns(kube_control):
     # send port, domain, sdn_ip to the remote side
-    kube_control.set_dns(53, "cluster.local", "10.1.0.10")
+    kube_control.set_dns(53, "cluster.local", "10.1.0.10", True)
 
 @when('kube-control.gpu.available')
 def on_gpu_available(kube_control):
     # The remote side is gpu-enable, handle it somehow
     assert kube_control.get_gpu() == True
 
-
-@when('kube-control.departed')
-@when('leadership.is_leader')
-def flush_auth_for_departed(kube_control):
-    ''' Unit has left the cluster and needs to have its authentication
-    tokens removed from the token registry '''
-    departing_unit = kube_control.flush_departed()
 
 ```
 
@@ -83,10 +74,6 @@ def flush_auth_for_departed(kube_control):
 * `kube-control.connected`
 
   Enabled when a master has joined the relation.
-
-* `kube-control.dns.available`
-
-  Enabled when DNS info is available from the master.
 
 * `kube-control.auth.available`
 
@@ -103,6 +90,10 @@ def flush_auth_for_departed(kube_control):
 
   Tell the master that we are gpu-enabled.
 
+* `kube_control.set_dns(enabled=True)`
+
+  Tell the master that we have dns setup.
+
 *  `kube_control.get_auth_credentials(user)`
 
   Returns a dict with the users authentication credentials.
@@ -116,7 +107,7 @@ def flush_auth_for_departed(kube_control):
 
 ```python
 
-@when('kube-control.dns.available')
+@when('kube-control.connected')
 def on_dns_available(kube_control):
     # Remote side has sent DNS info
     dns = kube_control.get_dns()
