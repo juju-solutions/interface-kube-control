@@ -39,6 +39,12 @@ class KubeControlProvider(RelationBase):
         else:
             conv.remove_state('{relation_name}.gpu.available')
 
+        hookenv.log('Checking for dns on workers')
+        if self._get_dns():
+            conv.set_state('{relation_name}.dns.available')
+        else:
+            conv.remove_state('{relation_name}.dns.available')
+
         if self._has_auth_request():
             conv.set_state('{relation_name}.auth.requested')
 
@@ -105,6 +111,20 @@ class KubeControlProvider(RelationBase):
                 hookenv.log('Unit {} has gpu enabled'.format(conv.scope))
                 return True
         return False
+
+
+    def _get_dns(self):
+        """Return True if all remote worker have installed dns.
+
+        """
+        for conv in self.conversations():
+            if not conv.is_state('{relation_name}.connected'):
+                continue
+            if not conv.get_remote('dns') or conv.get_remote('dns') == False:
+                hookenv.log('Unit {} has not dns enabled'.format(conv.scope))
+                return False
+        return True
+
 
     def _has_auth_request(self):
         """Check if there's a kubelet user on the wire requesting auth. This

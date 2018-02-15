@@ -33,11 +33,6 @@ class KubeControlRequireer(RelationBase):
         conv = self.conversation()
         conv.set_state('{relation_name}.connected')
 
-        if self.dns_ready():
-            conv.set_state('{relation_name}.dns.available')
-        else:
-            conv.remove_state('{relation_name}.dns.available')
-
         if self._has_auth_credentials():
             conv.set_state('{relation_name}.auth.available')
         else:
@@ -86,11 +81,6 @@ class KubeControlRequireer(RelationBase):
             'enable-kube-dns': conv.get_remote('enable-kube-dns'),
         }
 
-    def dns_ready(self):
-        """Return True if we have all DNS info from the master."""
-        keys = ['port', 'domain', 'sdn-ip', 'enable-kube-dns']
-        return set(self.get_dns().keys()) == set(keys)
-
     def set_auth_request(self, kubelet, group='system:nodes'):
         """ Tell the master that we are requesting auth, and to use this
         hostname for the kubelet system account.
@@ -109,6 +99,14 @@ class KubeControlRequireer(RelationBase):
         hookenv.log('Setting gpu={} on kube-control relation'.format(enabled))
         conv = self.conversation()
         conv.set_remote(gpu=enabled)
+
+    def set_dns(self, enabled=True):
+        """Tell the master that we got dns working (or not).
+
+        """
+        hookenv.log('Setting dns={} on kube-control relation'.format(enabled))
+        conv = self.conversation()
+        conv.set_remote(dns=enabled)
 
     def _has_auth_credentials(self):
         """Predicate method to signal we have authentication credentials """
