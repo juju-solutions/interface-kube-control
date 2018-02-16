@@ -89,7 +89,8 @@ class KubeControlRequireer(RelationBase):
     def dns_ready(self):
         """Return True if we have all DNS info from the master."""
         keys = ['port', 'domain', 'sdn-ip', 'enable-kube-dns']
-        return set(self.get_dns().keys()) == set(keys)
+        dns_info = self.get_dns()
+        return set(dns_info.keys()) == set(keys) and dns_info['enable-kube-dns'] != None
 
     def set_auth_request(self, kubelet, group='system:nodes'):
         """ Tell the master that we are requesting auth, and to use this
