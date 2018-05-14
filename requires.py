@@ -43,6 +43,11 @@ class KubeControlRequireer(RelationBase):
         else:
             conv.remove_state('{relation_name}.auth.available')
 
+        if self.get_cluster_tag():
+            conv.set_state('{relation_name}.cluster_tag.available')
+        else:
+            conv.remove_state('{relation_name}.cluster_tag.available')
+
     @hook('{requires:kube-control}-relation-{broken,departed}')
     def departed(self):
         """Remove all states.
@@ -117,3 +122,7 @@ class KubeControlRequireer(RelationBase):
         conv = self.conversation()
         if conv.get_remote('creds'):
             return True
+
+    def get_cluster_tag(self):
+        """Tag for identifying resources that are part of the cluster."""
+        return self.conversation().get_remote('cluster-tag')

@@ -45,6 +45,11 @@ Kubernetes cluster.
   Sends authentication tokens to the unit scope for the requested user
   and kube-proxy services.
 
+* `kube_control.set_cluster_tag(cluster_tag)`
+
+  Sends a tag used to identify resources that are part of the cluster to the
+  connected worker(s).
+
 * `kube_control.flush_departed()`
 
   Returns the unit departing the kube_control relationship so you can do any
@@ -92,6 +97,10 @@ def flush_auth_for_departed(kube_control):
 
   Enabled when authentication credentials are present from the master.
 
+* `kube-control.cluster_tag.available`
+
+  Enabled when cluster tag is present from the master.
+
 ### Methods
 
 * `kube_control.get_dns()`
@@ -111,6 +120,10 @@ def flush_auth_for_departed(kube_control):
 
   Issue an authentication request against the master to receive token based
   auth credentials in return.
+
+* `kube_control.get_cluster_tag()`
+
+  Returns the cluster tag provided by the master.
 
 ### Examples
 
