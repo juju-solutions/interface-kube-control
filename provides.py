@@ -114,3 +114,9 @@ class KubeControlProvider(RelationBase):
         conv = self.conversation()
         if conv.get_remote('kubelet_user'):
             return conv.get_remote('kubelet_user')
+
+    def set_cluster_tag(self, cluster_tag):
+        """Send the cluster tag to the remote units.
+        """
+        for conv in self.conversations():
+            conv.set_remote(data={'cluster-tag': cluster_tag})
