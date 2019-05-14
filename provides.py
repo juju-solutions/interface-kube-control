@@ -122,7 +122,7 @@ class KubeControlProvider(RelationBase):
             conv.set_remote(data={'cluster-tag': cluster_tag})
 
     def set_registry_location(self, registry_location):
-        """Send the cluster tag to the remote units.
+        """Send the registry location to the remote units.
         """
         for conv in self.conversations():
             conv.set_remote(data={'registry-location': registry_location})
