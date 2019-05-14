@@ -56,6 +56,9 @@ Kubernetes cluster.
   post removal cleanup. Such as removing authentication tokens for the unit.
   Invoking this method will also remove the `kube-control.departed` state
 
+* `kube_control.set_registry_location(registry_location)`
+  Sends the container image registry location to the connected worker(s).
+
 ### Examples
 
 ```python
@@ -101,6 +104,10 @@ def flush_auth_for_departed(kube_control):
 
   Enabled when cluster tag is present from the master.
 
+* `kube-control.registry_location.available`
+
+  Enabled when registry location is present from the master.
+
 ### Methods
 
 * `kube_control.get_dns()`
@@ -124,6 +131,10 @@ def flush_auth_for_departed(kube_control):
 * `kube_control.get_cluster_tag()`
 
   Returns the cluster tag provided by the master.
+
+* `kube_control.get_registry_location()`
+
+  Returns the container image registry location provided by the master.
 
 ### Examples
 
