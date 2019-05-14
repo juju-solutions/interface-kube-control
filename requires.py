@@ -48,6 +48,11 @@ class KubeControlRequireer(RelationBase):
         else:
             conv.remove_state('{relation_name}.cluster_tag.available')
 
+        if self.get_registry_location():
+            conv.set_state('{relation_name}.registry_location.available')
+        else:
+            conv.remove_state('{relation_name}.registry_location.available')
+
     @hook('{requires:kube-control}-relation-{broken,departed}')
     def departed(self):
         """Remove all states.
@@ -126,3 +131,7 @@ class KubeControlRequireer(RelationBase):
     def get_cluster_tag(self):
         """Tag for identifying resources that are part of the cluster."""
         return self.conversation().get_remote('cluster-tag')
+
+    def get_registry_location(self):
+        """URL for container image registry"""
+        return self.conversation().get_remote('registry-location')
