@@ -62,6 +62,9 @@ class KubeControlRequireer(RelationBase):
         if len(conv.units) == 1:
             conv.remove_state('{relation_name}.connected')
             conv.remove_state('{relation_name}.dns.available')
+            conv.remove_state('{relation_name}.auth.available')
+            conv.remove_state('{relation_name}.cluster_tag.available')
+            conv.remove_state('{relation_name}.registry_location.available')
 
     def get_auth_credentials(self, user):
         """ Return the authentication credentials.
