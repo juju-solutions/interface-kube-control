@@ -32,7 +32,23 @@ class KubeControlRequireer(RelationBase):
         """
         conv = self.conversation()
         conv.set_state('{relation_name}.connected')
+        self.check_states()
 
+    @hook('{requires:kube-control}-relation-departed')
+    def departed(self):
+        """Remove states corresponding to the data we have.
+
+        """
+        conv = self.conversation()
+        if len(conv.units) == 1:
+            conv.remove_state('{relation_name}.connected')
+        self.check_states()
+
+    def check_states(self):
+        """Toggle states based on available data.
+
+        """
+        conv = self.conversation()
         if self.dns_ready():
             conv.set_state('{relation_name}.dns.available')
         else:
@@ -51,19 +67,6 @@ class KubeControlRequireer(RelationBase):
         if self.get_registry_location():
             conv.set_state('{relation_name}.registry_location.available')
         else:
-            conv.remove_state('{relation_name}.registry_location.available')
-
-    @hook('{requires:kube-control}-relation-{broken,departed}')
-    def departed(self):
-        """Remove all states.
-
-        """
-        conv = self.conversation()
-        if len(conv.units) == 1:
-            conv.remove_state('{relation_name}.connected')
-            conv.remove_state('{relation_name}.dns.available')
-            conv.remove_state('{relation_name}.auth.available')
-            conv.remove_state('{relation_name}.cluster_tag.available')
             conv.remove_state('{relation_name}.registry_location.available')
 
     def get_auth_credentials(self, user):
