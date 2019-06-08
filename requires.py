@@ -40,9 +40,16 @@ class KubeControlRequireer(RelationBase):
 
         """
         conv = self.conversation()
-        if len(conv.units) == 1:
+        # Make sure we have valid states as long as we still have related
+        # units. Once all units are gone, clear all states.
+        if hookenv.related_units():
+            self.check_states()
+        else:
             conv.remove_state('{relation_name}.connected')
-        self.check_states()
+            conv.remove_state('{relation_name}.dns.available')
+            conv.remove_state('{relation_name}.auth.available')
+            conv.remove_state('{relation_name}.cluster_tag.available')
+            conv.remove_state('{relation_name}.registry_location.available')
 
     def check_states(self):
         """Toggle states based on available data.
