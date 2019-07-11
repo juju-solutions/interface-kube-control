@@ -113,7 +113,7 @@ class KubeControlRequirer(Endpoint):
         """
         Return the authentication credentials.
         """
-        rx = self.all_joined_units.received.get('creds')
+        rx = self.all_joined_units.received_raw.get('creds')
         if not rx:
             return None
 
@@ -131,7 +131,7 @@ class KubeControlRequirer(Endpoint):
         """
         Return DNS info provided by the master.
         """
-        rx = self.all_joined_units.received
+        rx = self.all_joined_units.received_raw
 
         return {
             'port': rx.get('port'),
@@ -170,7 +170,7 @@ class KubeControlRequirer(Endpoint):
         """
         log('Setting gpu={} on kube-control relation'.format(enabled))
         for relation in self.relations:
-            relation.to_publish.update({
+            relation.to_publish_raw.update({
                 'gpu': enabled
             })
 
@@ -178,17 +178,17 @@ class KubeControlRequirer(Endpoint):
         """
         Predicate method to signal we have authentication credentials.
         """
-        if self.all_joined_units.received.get('creds'):
+        if self.all_joined_units.received_raw.get('creds'):
             return True
 
     def get_cluster_tag(self):
         """
         Tag for identifying resources that are part of the cluster.
         """
-        return self.all_joined_units.received.get('cluster-tag')
+        return self.all_joined_units.received_raw.get('cluster-tag')
 
     def get_registry_location(self):
         """
         URL for container image registry.
         """
-        return self.all_joined_units.received.get('registry-location')
+        return self.all_joined_units.received_raw.get('registry-location')
