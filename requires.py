@@ -20,7 +20,8 @@ from charms.reactive import (
 
 from charms.reactive import (
     when,
-    when_any
+    when_any,
+    when_not
 )
 
 from charmhelpers.core.hookenv import (
@@ -40,10 +41,10 @@ class KubeControlRequirer(Endpoint):
         """
         Set states corresponding to the data we have.
         """
-        set_flag(self.expand_name('{endpoint_name}.available'))
+        set_flag(self.expand_name('{endpoint_name}.connected'))
         self.check_states()
 
-    @when('endpoint.{endpoint_name}.departed')
+    @when_not('endpoint.{endpoint_name}.joined')
     def departed(self):
         """
         Remove states corresponding to the data we have.
@@ -113,7 +114,7 @@ class KubeControlRequirer(Endpoint):
         """
         Return the authentication credentials.
         """
-        rx = self.all_joined_units.received_raw.get('creds')
+        rx = self.all_joined_units.received.get('creds')
         if not rx:
             return None
 

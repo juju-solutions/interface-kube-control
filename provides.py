@@ -20,7 +20,8 @@ from charms.reactive import (
 
 from charms.reactive import (
     when,
-    when_any
+    when_any,
+    when_not
 )
 
 from charmhelpers.core import (
@@ -51,12 +52,7 @@ class KubeControlProvider(Endpoint):
                 self.expand_name(
                     '{endpoint_name}.gpu.available'))
 
-        if self._has_auth_request():
-            set_flag(
-                self.expand_name(
-                    '{endpoint_name}.auth.available'))
-
-    @when('{endpoint_name}.departed')
+    @when_not('endpoint.{endpoint_name}.joined')
     def departed(self):
         """
         Remove all states.
@@ -67,9 +63,6 @@ class KubeControlProvider(Endpoint):
         clear_flag(
             self.expand_name(
                 '{endpoint_name}.dns.available'))
-        clear_flag(
-            self.expand_name(
-                '{endpoint_name}.auth.available'))
         clear_flag(
             self.expand_name(
                 '{endpoint_name}.cluster_tag.available'))
@@ -86,7 +79,7 @@ class KubeControlProvider(Endpoint):
         is available implicitly.
         """
         for relation in self.relations:
-            relation.to_publish.update({
+            relation.to_publish_raw.update({
                 'port': port,
                 'domain': domain,
                 'sdn-ip': sdn_ip,
@@ -132,8 +125,6 @@ class KubeControlProvider(Endpoint):
                 'creds': all_creds
             })
 
-        clear_flag('{relation_name}.auth.requested')
-
     def _get_gpu(self):
         """
         Return True if any remote worker is gpu-enabled.
@@ -145,21 +136,12 @@ class KubeControlProvider(Endpoint):
 
         return False
 
-    def _has_auth_request(self):
-        """
-        Check if there's a kubelet user on the wire requesting auth. This
-        action implies requested kube-proxy auth as well, as kube-proxy should
-        be run everywhere there is a kubelet.
-        """
-        if self.all_joined_units.received_raw.get('kubelet_user'):
-            return self.all_joined_units.received_raw.get('kubelet_user')
-
     def set_cluster_tag(self, cluster_tag):
         """
         Send the cluster tag to the remote units.
         """
         for relation in self.relations:
-            relation.to_publish.update({
+            relation.to_publish_raw.update({
                 'cluster-tag': cluster_tag
             })
 
@@ -168,6 +150,6 @@ class KubeControlProvider(Endpoint):
         Send the registry location to the remote units.
         """
         for relation in self.relations:
-            relation.to_publish.update({
+            relation.to_publish_raw.update({
                 'registry-location': registry_location
             })
