@@ -12,76 +12,108 @@
 # limitations under the License.
 import json
 
-from charms.reactive import RelationBase
-from charms.reactive import hook
-from charms.reactive import scopes
+from charms.reactive import (
+    Endpoint,
+    set_flag,
+    clear_flag
+)
 
-from charmhelpers.core import hookenv
+from charms.reactive import (
+    when,
+    when_any
+)
+
+from charmhelpers.core.hookenv import (
+    log,
+    related_units
+)
 
 
-class KubeControlRequireer(RelationBase):
-    """Implements the kubernetes-worker side of the kube-control interface.
 
+class KubeControlRequirer(Endpoint):
     """
-    scope = scopes.GLOBAL
-
-    @hook('{requires:kube-control}-relation-{joined,changed}')
+    Implements the kubernetes-worker side of the kube-control interface.
+    """
+    @when_any('{endpoint_name}-relation-joined',
+              '{endpoint_name}-relation-changed')
     def joined_or_changed(self):
-        """Set states corresponding to the data we have.
-
         """
-        conv = self.conversation()
-        conv.set_state('{relation_name}.connected')
+        Set states corresponding to the data we have.
+        """
+        set_flag(self.expand_name('endpoint.{endpoint_name}.available'))
         self.check_states()
 
-    @hook('{requires:kube-control}-relation-departed')
+    @when('{endpoint_name}-relation-departed')
     def departed(self):
-        """Remove states corresponding to the data we have.
-
         """
-        conv = self.conversation()
+        Remove states corresponding to the data we have.
+        """
         # Make sure we have valid states as long as we still have related
         # units. Once all units are gone, clear all states.
-        if hookenv.related_units():
+        if related_units():
             self.check_states()
         else:
-            conv.remove_state('{relation_name}.connected')
-            conv.remove_state('{relation_name}.dns.available')
-            conv.remove_state('{relation_name}.auth.available')
-            conv.remove_state('{relation_name}.cluster_tag.available')
-            conv.remove_state('{relation_name}.registry_location.available')
+            clear_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.connected'))
+            clear_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.dns.available'))
+            clear_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.auth.available'))
+            clear_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.cluster_tag.available'))
+            clear_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.registry_location.available'))
 
     def check_states(self):
-        """Toggle states based on available data.
-
         """
-        conv = self.conversation()
+        Toggle states based on available data.
+        """
         if self.dns_ready():
-            conv.set_state('{relation_name}.dns.available')
+            set_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.dns.available'))
         else:
-            conv.remove_state('{relation_name}.dns.available')
+            clear_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.dns.available'))
 
         if self._has_auth_credentials():
-            conv.set_state('{relation_name}.auth.available')
+            set_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.auth.available'))
         else:
-            conv.remove_state('{relation_name}.auth.available')
+            clear_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.auth.available'))
 
         if self.get_cluster_tag():
-            conv.set_state('{relation_name}.cluster_tag.available')
+            set_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.cluster_tag.available'))
         else:
-            conv.remove_state('{relation_name}.cluster_tag.available')
+            clear_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.cluster_tag.available'))
 
         if self.get_registry_location():
-            conv.set_state('{relation_name}.registry_location.available')
+            set_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.registry_location.available'))
         else:
-            conv.remove_state('{relation_name}.registry_location.available')
+            clear_flag(
+                self.expand_name(
+                    'endpoint.{endpoint_name}.registry_location.available'))
 
     def get_auth_credentials(self, user):
-        """ Return the authentication credentials.
-
         """
-        conv = self.conversation()
-        remote_creds = conv.get_remote('creds')
+        Return the authentication credentials.
+        """
+        remote_creds = self.all_joined_units.received.get('creds')
         if not remote_creds:
             return None
 
@@ -97,54 +129,67 @@ class KubeControlRequireer(RelationBase):
             return None
 
     def get_dns(self):
-        """Return DNS info provided by the master.
-
         """
-        conv = self.conversation()
+        Return DNS info provided by the master.
+        """
+        rx = self.all_joined_units.received
 
         return {
-            'port': conv.get_remote('port'),
-            'domain': conv.get_remote('domain'),
-            'sdn-ip': conv.get_remote('sdn-ip'),
-            'enable-kube-dns': conv.get_remote('enable-kube-dns'),
+            'port': rx.get('port'),
+            'domain': rx.get('domain'),
+            'sdn-ip': rx.get('sdn-ip'),
+            'enable-kube-dns': rx.get('enable-kube-dns'),
         }
 
     def dns_ready(self):
-        """Return True if we have all DNS info from the master."""
+        """
+        Return True if we have all DNS info from the master.
+        """
         keys = ['port', 'domain', 'sdn-ip', 'enable-kube-dns']
         dns_info = self.get_dns()
         return (set(dns_info.keys()) == set(keys) and
                 dns_info['enable-kube-dns'] is not None)
 
     def set_auth_request(self, kubelet, group='system:nodes'):
-        """ Tell the master that we are requesting auth, and to use this
+        """
+        Tell the master that we are requesting auth, and to use this
         hostname for the kubelet system account.
 
         Param groups - Determines the level of eleveted privleges of the
         requested user. Can be overridden to request sudo level access on the
-        cluster via changing to system:masters """
-        conv = self.conversation()
-        conv.set_remote(data={'kubelet_user': kubelet,
-                              'auth_group': group})
+        cluster via changing to system:masters.
+        """
+        for relation in self.relations:
+            relation.to_publish.update({
+                'kubelet_user': kubelet,
+                'auth_group': group
+            })
 
     def set_gpu(self, enabled=True):
-        """Tell the master that we're gpu-enabled (or not).
-
         """
-        hookenv.log('Setting gpu={} on kube-control relation'.format(enabled))
-        conv = self.conversation()
-        conv.set_remote(gpu=enabled)
+        Tell the master that we're gpu-enabled (or not).
+        """
+        log('Setting gpu={} on kube-control relation'.format(enabled))
+        for relation in self.relations:
+            relation.to_publish.update({
+                'gpu': enabled
+            })
 
     def _has_auth_credentials(self):
-        """Predicate method to signal we have authentication credentials """
-        conv = self.conversation()
-        if conv.get_remote('creds'):
+        """
+        Predicate method to signal we have authentication credentials.
+        """
+        if self.all_joined_units.received.get('creds'):
             return True
 
     def get_cluster_tag(self):
-        """Tag for identifying resources that are part of the cluster."""
-        return self.conversation().get_remote('cluster-tag')
+        """
+        Tag for identifying resources that are part of the cluster.
+        """
+        return self.all_joined_units.received.get('cluster-tag')
 
     def get_registry_location(self):
-        """URL for container image registry"""
-        return self.conversation().get_remote('registry-location')
+        """
+        URL for container image registry.
+        """
+        return self.all_joined_units.received.get('registry-location')
