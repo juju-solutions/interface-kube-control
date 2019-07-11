@@ -159,7 +159,7 @@ class KubeControlRequirer(Endpoint):
         cluster via changing to system:masters.
         """
         for relation in self.relations:
-            relation.to_publish.update({
+            relation.to_publish_raw.update({
                 'kubelet_user': kubelet,
                 'auth_group': group
             })
