@@ -24,11 +24,7 @@ from charms.reactive import (
     when_not
 )
 
-from charmhelpers.core.hookenv import (
-    log,
-    related_units
-)
-
+from charmhelpers.core.hookenv import log
 
 
 class KubeControlRequirer(Endpoint):
@@ -43,32 +39,28 @@ class KubeControlRequirer(Endpoint):
         """
         set_flag(self.expand_name('{endpoint_name}.connected'))
         self.check_states()
+        clear_flag(self.expand_name('endpoint.{endpoint_name}.changed'))
 
     @when_not('endpoint.{endpoint_name}.joined')
     def departed(self):
         """
         Remove states corresponding to the data we have.
         """
-        # Make sure we have valid states as long as we still have related
-        # units. Once all units are gone, clear all states.
-        if related_units():
-            self.check_states()
-        else:
-            clear_flag(
-                self.expand_name(
-                    '{endpoint_name}.connected'))
-            clear_flag(
-                self.expand_name(
-                    '{endpoint_name}.dns.available'))
-            clear_flag(
-                self.expand_name(
-                    '{endpoint_name}.auth.available'))
-            clear_flag(
-                self.expand_name(
-                    '{endpoint_name}.cluster_tag.available'))
-            clear_flag(
-                self.expand_name(
-                    '{endpoint_name}.registry_location.available'))
+        clear_flag(
+            self.expand_name(
+                '{endpoint_name}.connected'))
+        clear_flag(
+            self.expand_name(
+                '{endpoint_name}.dns.available'))
+        clear_flag(
+            self.expand_name(
+                '{endpoint_name}.auth.available'))
+        clear_flag(
+            self.expand_name(
+                '{endpoint_name}.cluster_tag.available'))
+        clear_flag(
+            self.expand_name(
+                '{endpoint_name}.registry_location.available'))
 
     def check_states(self):
         """
