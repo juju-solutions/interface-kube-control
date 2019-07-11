@@ -34,16 +34,16 @@ class KubeControlRequirer(Endpoint):
     """
     Implements the kubernetes-worker side of the kube-control interface.
     """
-    @when_any('{endpoint_name}-relation-joined',
-              '{endpoint_name}-relation-changed')
+    @when_any('endpoint.{endpoint_name}.joined',
+              'endpoint.{endpoint_name}.changed')
     def joined_or_changed(self):
         """
         Set states corresponding to the data we have.
         """
-        set_flag(self.expand_name('endpoint.{endpoint_name}.available'))
+        set_flag(self.expand_name('{endpoint_name}.available'))
         self.check_states()
 
-    @when('{endpoint_name}-relation-departed')
+    @when('endpoint.{endpoint_name}.departed')
     def departed(self):
         """
         Remove states corresponding to the data we have.
@@ -55,19 +55,19 @@ class KubeControlRequirer(Endpoint):
         else:
             clear_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.connected'))
+                    '{endpoint_name}.connected'))
             clear_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.dns.available'))
+                    '{endpoint_name}.dns.available'))
             clear_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.auth.available'))
+                    '{endpoint_name}.auth.available'))
             clear_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.cluster_tag.available'))
+                    '{endpoint_name}.cluster_tag.available'))
             clear_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.registry_location.available'))
+                    '{endpoint_name}.registry_location.available'))
 
     def check_states(self):
         """
@@ -76,54 +76,53 @@ class KubeControlRequirer(Endpoint):
         if self.dns_ready():
             set_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.dns.available'))
+                    '{endpoint_name}.dns.available'))
         else:
             clear_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.dns.available'))
+                    '{endpoint_name}.dns.available'))
 
         if self._has_auth_credentials():
             set_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.auth.available'))
+                    '{endpoint_name}.auth.available'))
         else:
             clear_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.auth.available'))
+                    '{endpoint_name}.auth.available'))
 
         if self.get_cluster_tag():
             set_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.cluster_tag.available'))
+                    '{endpoint_name}.cluster_tag.available'))
         else:
             clear_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.cluster_tag.available'))
+                    '{endpoint_name}.cluster_tag.available'))
 
         if self.get_registry_location():
             set_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.registry_location.available'))
+                    '{endpoint_name}.registry_location.available'))
         else:
             clear_flag(
                 self.expand_name(
-                    'endpoint.{endpoint_name}.registry_location.available'))
+                    '{endpoint_name}.registry_location.available'))
 
     def get_auth_credentials(self, user):
         """
         Return the authentication credentials.
         """
-        remote_creds = self.all_joined_units.received.get('creds')
-        if not remote_creds:
+        rx = self.all_joined_units.received.get('creds')
+        if not rx:
             return None
 
-        all_creds = json.loads(remote_creds)
-        if user in all_creds:
+        if user in rx:
             return {
                 'user': user,
-                'kubelet_token': all_creds[user]['kubelet_token'],
-                'proxy_token': all_creds[user]['proxy_token'],
-                'client_token': all_creds[user]['client_token']
+                'kubelet_token': rx[user]['kubelet_token'],
+                'proxy_token': rx[user]['proxy_token'],
+                'client_token': rx[user]['client_token']
             }
         else:
             return None
