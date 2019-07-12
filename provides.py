@@ -40,7 +40,7 @@ class KubeControlProvider(Endpoint):
     @when_any('endpoint.{endpoint_name}.joined',
               'endpoint.{endpoint_name}.changed')
     def joined_or_changed(self):
-        set_flag(self.expand_name('{endpoint_name}.available'))
+        set_flag(self.expand_name('{endpoint_name}.connected'))
 
         hookenv.log('Checking for gpu-enabled workers')
         if self._get_gpu():
