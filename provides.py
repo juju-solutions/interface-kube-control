@@ -52,6 +52,8 @@ class KubeControlProvider(Endpoint):
                 self.expand_name(
                     '{endpoint_name}.gpu.available'))
 
+        clear_flag(self.expand_name('endpoint.{endpoint_name}.changed'))
+
     @when_not('endpoint.{endpoint_name}.joined')
     def departed(self):
         """
