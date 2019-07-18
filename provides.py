@@ -61,6 +61,9 @@ class KubeControlProvider(Endpoint):
         """
         clear_flag(
             self.expand_name(
+                '{endpoint_name}.connected'))
+        clear_flag(
+            self.expand_name(
                 '{endpoint_name}.gpu.available'))
 
     def set_dns(self, port, domain, sdn_ip, enable_kube_dns):
