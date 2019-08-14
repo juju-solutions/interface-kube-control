@@ -106,7 +106,9 @@ class KubeControlRequirer(Endpoint):
         """
         Return the authentication credentials.
         """
-        rx = self.all_joined_units.received.get('creds')
+        rx = {}
+        for unit in self.all_joined_units:
+            rx.update(unit.received.get('creds'))
         if not rx:
             return None
 
