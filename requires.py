@@ -108,7 +108,7 @@ class KubeControlRequirer(Endpoint):
         """
         rx = {}
         for unit in self.all_joined_units:
-            rx.update(unit.received.get('creds'))
+            rx.update(unit.received.get('creds', {}))
         if not rx:
             return None
 
