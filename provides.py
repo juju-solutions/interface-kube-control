@@ -10,18 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
-
 from charms.reactive import (
     Endpoint,
-    set_flag,
-    clear_flag
-)
-
-from charms.reactive import (
-    when,
-    when_any,
-    when_not
+    toggle_flag,
 )
 
 from charmhelpers.core import (
@@ -37,34 +28,12 @@ class KubeControlProvider(Endpoint):
     """
     Implements the kubernetes-master side of the kube-control interface.
     """
-    @when_any('endpoint.{endpoint_name}.joined',
-              'endpoint.{endpoint_name}.changed')
-    def joined_or_changed(self):
-        set_flag(self.expand_name('{endpoint_name}.connected'))
-
+    def manage_flags(self):
+        toggle_flag(self.expand_name('{endpoint_name}.connected'),
+                    self.is_joined)
         hookenv.log('Checking for gpu-enabled workers')
-        if self._get_gpu():
-            set_flag(
-                self.expand_name(
-                    '{endpoint_name}.gpu.available'))
-        else:
-            clear_flag(
-                self.expand_name(
-                    '{endpoint_name}.gpu.available'))
-
-        clear_flag(self.expand_name('endpoint.{endpoint_name}.changed'))
-
-    @when_not('endpoint.{endpoint_name}.joined')
-    def departed(self):
-        """
-        Remove all states.
-        """
-        clear_flag(
-            self.expand_name(
-                '{endpoint_name}.connected'))
-        clear_flag(
-            self.expand_name(
-                '{endpoint_name}.gpu.available'))
+        toggle_flag(self.expand_name('{endpoint_name}.gpu.available'),
+                    self.is_joined and self._get_gpu())
 
     def set_dns(self, port, domain, sdn_ip, enable_kube_dns):
         """
@@ -149,3 +118,10 @@ class KubeControlProvider(Endpoint):
             relation.to_publish_raw.update({
                 'registry-location': registry_location
             })
+
+    def set_cohort_keys(self, cohort_keys):
+        """
+        Send the cohort snapshot keys.
+        """
+        for relation in self.relations:
+            relation.to_publish['cohort-keys'] = cohort_keys

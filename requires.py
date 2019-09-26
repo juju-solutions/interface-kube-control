@@ -10,18 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
 
 from charms.reactive import (
     Endpoint,
-    set_flag,
-    clear_flag
-)
-
-from charms.reactive import (
-    when,
-    when_any,
-    when_not
+    toggle_flag,
 )
 
 from charmhelpers.core.hookenv import log
@@ -31,76 +23,28 @@ class KubeControlRequirer(Endpoint):
     """
     Implements the kubernetes-worker side of the kube-control interface.
     """
-    @when_any('endpoint.{endpoint_name}.joined',
-              'endpoint.{endpoint_name}.changed')
-    def joined_or_changed(self):
+    def manage_flags(self):
         """
         Set states corresponding to the data we have.
         """
-        set_flag(self.expand_name('{endpoint_name}.connected'))
-        self.check_states()
-        clear_flag(self.expand_name('endpoint.{endpoint_name}.changed'))
-
-    @when_not('endpoint.{endpoint_name}.joined')
-    def departed(self):
-        """
-        Remove states corresponding to the data we have.
-        """
-        clear_flag(
-            self.expand_name(
-                '{endpoint_name}.connected'))
-        clear_flag(
-            self.expand_name(
-                '{endpoint_name}.dns.available'))
-        clear_flag(
-            self.expand_name(
-                '{endpoint_name}.auth.available'))
-        clear_flag(
-            self.expand_name(
-                '{endpoint_name}.cluster_tag.available'))
-        clear_flag(
-            self.expand_name(
-                '{endpoint_name}.registry_location.available'))
-
-    def check_states(self):
-        """
-        Toggle states based on available data.
-        """
-        if self.dns_ready():
-            set_flag(
-                self.expand_name(
-                    '{endpoint_name}.dns.available'))
-        else:
-            clear_flag(
-                self.expand_name(
-                    '{endpoint_name}.dns.available'))
-
-        if self._has_auth_credentials():
-            set_flag(
-                self.expand_name(
-                    '{endpoint_name}.auth.available'))
-        else:
-            clear_flag(
-                self.expand_name(
-                    '{endpoint_name}.auth.available'))
-
-        if self.get_cluster_tag():
-            set_flag(
-                self.expand_name(
-                    '{endpoint_name}.cluster_tag.available'))
-        else:
-            clear_flag(
-                self.expand_name(
-                    '{endpoint_name}.cluster_tag.available'))
-
-        if self.get_registry_location():
-            set_flag(
-                self.expand_name(
-                    '{endpoint_name}.registry_location.available'))
-        else:
-            clear_flag(
-                self.expand_name(
-                    '{endpoint_name}.registry_location.available'))
+        toggle_flag(
+            self.expand_name('{endpoint_name}.connected'),
+            self.is_joined)
+        toggle_flag(
+            self.expand_name('{endpoint_name}.dns.available'),
+            self.is_joined and self.dns_ready())
+        toggle_flag(
+            self.expand_name('{endpoint_name}.auth.available'),
+            self.is_joined and self._has_auth_credentials())
+        toggle_flag(
+            self.expand_name('{endpoint_name}.cluster_tag.available'),
+            self.is_joined and self.get_cluster_tag())
+        toggle_flag(
+            self.expand_name('{endpoint_name}.registry_location.available'),
+            self.is_joined and self.get_registry_location())
+        toggle_flag(
+            self.expand_name('{endpoint_name}.cohort_keys.available'),
+            self.is_joined and self.cohort_keys)
 
     def get_auth_credentials(self, user):
         """
@@ -187,3 +131,10 @@ class KubeControlRequirer(Endpoint):
         URL for container image registry.
         """
         return self.all_joined_units.received_raw.get('registry-location')
+
+    @property
+    def cohort_keys(self):
+        """
+        The cohort snapshot keys sent by the master's leader.
+        """
+        return self.all_joined_units.received['cohort-keys']
