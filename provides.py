@@ -125,3 +125,10 @@ class KubeControlProvider(Endpoint):
         """
         for relation in self.relations:
             relation.to_publish['cohort-keys'] = cohort_keys
+
+    def set_default_cni(self, default_cni):
+        """
+        Send the default CNI.
+        """
+        for relation in self.relations:
+            relation.to_publish['default-cni'] = default_cni
