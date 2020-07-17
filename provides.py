@@ -73,7 +73,7 @@ class KubeControlProvider(Endpoint):
         return requests
 
     def sign_auth_request(self, scope, user, kubelet_token, proxy_token,
-                          client_token):
+                          scheduler_token, client_token):
         """
         Send authorization tokens to the requesting unit.
         """
@@ -81,6 +81,7 @@ class KubeControlProvider(Endpoint):
             'scope': scope,
             'kubelet_token': kubelet_token,
             'proxy_token': proxy_token,
+            'scheduler_token': scheduler_token,
             'client_token': client_token
         }
 
