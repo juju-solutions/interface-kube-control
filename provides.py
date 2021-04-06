@@ -150,3 +150,11 @@ class KubeControlProvider(Endpoint):
         """
         for relation in self.relations:
             relation.to_publish['default-cni'] = default_cni
+
+    def set_api_endpoints(self, endpoints):
+        """
+        Send the list of API endpoint URLs to which workers should connect.
+        """
+        endpoints = sorted(endpoints)
+        for relation in self.relations:
+            relation.to_publish['api-endpoints'] = endpoints

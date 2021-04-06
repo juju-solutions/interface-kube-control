@@ -48,6 +48,9 @@ class KubeControlRequirer(Endpoint):
         toggle_flag(
             self.expand_name('{endpoint_name}.default_cni.available'),
             self.is_joined and self.get_default_cni() is not None)
+        toggle_flag(
+            self.expand_name('{endpoint_name}.api_endpoints.available'),
+            self.is_joined and all(self.get_api_endpoints()))
 
     def get_auth_credentials(self, user):
         """
@@ -147,3 +150,12 @@ class KubeControlRequirer(Endpoint):
         Default CNI network to use.
         """
         return self.all_joined_units.received['default-cni']
+
+    def get_api_endpoints(self):
+        """
+        Returns a list of API endpoint URLs.
+        """
+        endpoints = set()
+        for unit in self.all_joined_units:
+            endpoints.update(unit.received['api-endpoints'] or [])
+        return sorted(endpoints)
