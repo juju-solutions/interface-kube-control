@@ -50,7 +50,7 @@ class KubeControlRequirer(Endpoint):
             self.is_joined and self.get_default_cni() is not None)
         toggle_flag(
             self.expand_name('{endpoint_name}.api_endpoints.available'),
-            self.is_joined and all(self.get_api_endpoints()))
+            self.is_joined and self.get_api_endpoints())
 
     def get_auth_credentials(self, user):
         """
