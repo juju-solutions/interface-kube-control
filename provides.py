@@ -158,3 +158,10 @@ class KubeControlProvider(Endpoint):
         endpoints = sorted(endpoints)
         for relation in self.relations:
             relation.to_publish['api-endpoints'] = endpoints
+
+    def set_has_xcp(self, has_xcp):
+        """
+        Set the flag indicating that an external cloud provider is in use.
+        """
+        for relation in self.relations:
+            relation.to_publish['has-xcp'] = bool(has_xcp)

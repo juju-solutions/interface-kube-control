@@ -159,3 +159,10 @@ class KubeControlRequirer(Endpoint):
         for unit in self.all_joined_units:
             endpoints.update(unit.received['api-endpoints'] or [])
         return sorted(endpoints)
+
+    @property
+    def has_xcp(self):
+        """
+        The flag indicating whether an external cloud provider is in use.
+        """
+        return self.all_joined_units.received.get("has-xcp", False)
