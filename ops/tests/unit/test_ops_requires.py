@@ -6,31 +6,19 @@ from pathlib import Path
 import pytest
 import yaml
 from ops.charm import RelationBrokenEvent, CharmBase
-from ops.testing import Harness
 from ops.interface_kube_control import KubeControlRequirer
 
 
-class MyCharm(CharmBase):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.kube_control = KubeControlRequirer(self)
-
-
 @pytest.fixture
-def harness():
-    harness = Harness(
-        MyCharm,
-        meta="""\
-    name: test
-    requires:
-      kube-control:
-        interface: kube-control
-        limit: 1""",
-    )
-    try:
-        yield harness
-    finally:
-        harness.cleanup()
+def charm():
+    mock_charm = mock.MagicMock(auto_spec=CharmBase)
+    mock_charm.unit.name = "test"
+    yield mock_charm
+
+
+@pytest.fixture(scope="function")
+def kube_control_requirer(charm):
+    yield KubeControlRequirer(charm)
 
 
 @pytest.fixture(autouse=True)
@@ -48,9 +36,7 @@ def relation_data():
 @pytest.mark.parametrize(
     "event_type", [None, RelationBrokenEvent], ids=["unrelated", "dropped relation"]
 )
-def test_is_ready_no_relation(harness: Harness, event_type):
-    harness.begin()
-
+def test_is_ready_no_relation(kube_control_requirer, event_type):
     with mock.patch.object(
         KubeControlRequirer, "relation", new_callable=mock.PropertyMock
     ) as mock_prop:
@@ -59,12 +45,11 @@ def test_is_ready_no_relation(harness: Harness, event_type):
         relation.units = []
         event = mock.MagicMock(spec=event_type)
         event.relation = relation
-        assert harness.charm.kube_control.is_ready is False
-        assert "Missing" in harness.charm.kube_control.evaluate_relation(event)
+        assert kube_control_requirer.is_ready is False
+        assert "Missing" in kube_control_requirer.evaluate_relation(event)
 
 
-def test_is_ready_invalid_data(harness: Harness, relation_data):
-    harness.begin()
+def test_is_ready_invalid_data(kube_control_requirer, relation_data):
     relation_data["domain"] = 123
     with mock.patch.object(
         KubeControlRequirer, "relation", new_callable=mock.PropertyMock
@@ -72,22 +57,22 @@ def test_is_ready_invalid_data(harness: Harness, relation_data):
         relation = mock_prop.return_value
         relation.units = ["remote/0"]
         relation.data = {"remote/0": relation_data}
-        assert harness.charm.kube_control.is_ready is False
+        assert kube_control_requirer.is_ready is False
 
 
-def test_is_ready_success(harness: Harness, relation_data):
-    harness.begin()
+def test_is_ready_success(kube_control_requirer, relation_data):
     with mock.patch.object(
         KubeControlRequirer, "relation", new_callable=mock.PropertyMock
     ) as mock_prop:
         relation = mock_prop.return_value
         relation.units = ["remote/0"]
         relation.data = {"remote/0": relation_data}
-        assert harness.charm.kube_control.is_ready is True
+        assert kube_control_requirer.is_ready is True
 
 
-def test_create_kubeconfig(harness, relation_data, mock_ca_cert, tmpdir):
-    harness.begin()
+def test_create_kubeconfig(
+    charm, kube_control_requirer, relation_data, mock_ca_cert, tmpdir
+):
     with mock.patch.object(
         KubeControlRequirer, "relation", new_callable=mock.PropertyMock
     ) as mock_prop:
@@ -99,16 +84,16 @@ def test_create_kubeconfig(harness, relation_data, mock_ca_cert, tmpdir):
 
         # First run creates a new file
         assert not kube_config.exists()
-        harness.charm.kube_control.create_kubeconfig(
-            mock_ca_cert, kube_config, "ubuntu", harness.charm.unit.name
+        kube_control_requirer.create_kubeconfig(
+            mock_ca_cert, kube_config, "ubuntu", charm.unit.name
         )
         config = yaml.safe_load(kube_config.read_text())
         assert config["kind"] == "Config"
 
         # Second call alters existing file
         kube_config.write_text("")
-        harness.charm.kube_control.create_kubeconfig(
-            mock_ca_cert, kube_config, "ubuntu", harness.charm.unit.name
+        kube_control_requirer.create_kubeconfig(
+            mock_ca_cert, kube_config, "ubuntu", charm.unit.name
         )
         config = yaml.safe_load(kube_config.read_text())
         assert config["kind"] == "Config"
