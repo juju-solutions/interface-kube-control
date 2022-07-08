@@ -232,7 +232,7 @@ class KubeControlRequirer(Object):
 
     def set_gpu(self, enabled=True):
         """
-        Tell the master that we're gpu-enabled (or not).
+        Tell the control-plane that we're gpu-enabled (or not).
         """
         log("Setting gpu={} on kube-control relation".format(enabled))
         for relation in self.model.relations:
