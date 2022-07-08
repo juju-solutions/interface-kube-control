@@ -10,17 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from charms.reactive import (
-    Endpoint,
-    toggle_flag,
-    set_flag,
-    data_changed
-)
+from charms.reactive import Endpoint, toggle_flag, set_flag, data_changed
 
-from charmhelpers.core import (
-    hookenv,
-    unitdata
-)
+from charmhelpers.core import hookenv, unitdata
 
 
 DB = unitdata.kv()
@@ -30,15 +22,17 @@ class KubeControlProvider(Endpoint):
     """
     Implements the kubernetes-master side of the kube-control interface.
     """
+
     def manage_flags(self):
-        toggle_flag(self.expand_name('{endpoint_name}.connected'),
-                    self.is_joined)
-        toggle_flag(self.expand_name('{endpoint_name}.gpu.available'),
-                    self.is_joined and self._get_gpu())
-        requests_data_id = self.expand_name('{endpoint_name}.requests')
+        toggle_flag(self.expand_name("{endpoint_name}.connected"), self.is_joined)
+        toggle_flag(
+            self.expand_name("{endpoint_name}.gpu.available"),
+            self.is_joined and self._get_gpu(),
+        )
+        requests_data_id = self.expand_name("{endpoint_name}.requests")
         requests = self.auth_user()
         if data_changed(requests_data_id, requests):
-            set_flag(self.expand_name('{endpoint_name}.requests.changed'))
+            set_flag(self.expand_name("{endpoint_name}.requests.changed"))
 
     def set_dns(self, port, domain, sdn_ip, enable_kube_dns):
         """
@@ -49,12 +43,14 @@ class KubeControlProvider(Endpoint):
         is available implicitly.
         """
         for relation in self.relations:
-            relation.to_publish_raw.update({
-                'port': port,
-                'domain': domain,
-                'sdn-ip': sdn_ip,
-                'enable-kube-dns': enable_kube_dns,
-            })
+            relation.to_publish_raw.update(
+                {
+                    "port": port,
+                    "domain": domain,
+                    "sdn-ip": sdn_ip,
+                    "enable-kube-dns": enable_kube_dns,
+                }
+            )
 
     def auth_user(self):
         """
@@ -64,54 +60,55 @@ class KubeControlProvider(Endpoint):
 
         for unit in self.all_joined_units:
             requests.append(
-                (unit.unit_name,
-                 {'user': unit.received_raw.get('kubelet_user'),
-                  'group': unit.received_raw.get('auth_group')})
+                (
+                    unit.unit_name,
+                    {
+                        "user": unit.received_raw.get("kubelet_user"),
+                        "group": unit.received_raw.get("auth_group"),
+                    },
+                )
             )
 
         requests.sort()
         return requests
 
-    def sign_auth_request(self, scope, user, kubelet_token, proxy_token,
-                          client_token):
+    def sign_auth_request(self, scope, user, kubelet_token, proxy_token, client_token):
         """
         Send authorization tokens to the requesting unit.
         """
         cred = {
-            'scope': scope,
-            'kubelet_token': kubelet_token,
-            'proxy_token': proxy_token,
-            'client_token': client_token
+            "scope": scope,
+            "kubelet_token": kubelet_token,
+            "proxy_token": proxy_token,
+            "client_token": client_token,
         }
 
-        if not DB.get('creds'):
-            DB.set('creds', {})
+        if not DB.get("creds"):
+            DB.set("creds", {})
 
-        all_creds = DB.get('creds')
+        all_creds = DB.get("creds")
         all_creds[user] = cred
-        DB.set('creds', all_creds)
+        DB.set("creds", all_creds)
 
         for relation in self.relations:
-            relation.to_publish.update({
-                'creds': all_creds
-            })
+            relation.to_publish.update({"creds": all_creds})
 
     def clear_creds(self):
         """
         Clear creds from the relation. This is used by non-leader units to stop
         advertising creds so that the leader can assume full control of them.
         """
-        DB.unset('creds')
+        DB.unset("creds")
         for relation in self.relations:
-            relation.to_publish_raw['creds'] = ''
+            relation.to_publish_raw["creds"] = ""
 
     def _get_gpu(self):
         """
         Return True if any remote worker is gpu-enabled.
         """
         for unit in self.all_joined_units:
-            if unit.received_raw.get('gpu') == 'True':
-                hookenv.log('Unit {} has gpu enabled'.format(unit))
+            if unit.received_raw.get("gpu") == "True":
+                hookenv.log("Unit {} has gpu enabled".format(unit))
                 return True
 
         return False
@@ -121,25 +118,21 @@ class KubeControlProvider(Endpoint):
         Send the cluster tag to the remote units.
         """
         for relation in self.relations:
-            relation.to_publish_raw.update({
-                'cluster-tag': cluster_tag
-            })
+            relation.to_publish_raw.update({"cluster-tag": cluster_tag})
 
     def set_registry_location(self, registry_location):
         """
         Send the registry location to the remote units.
         """
         for relation in self.relations:
-            relation.to_publish_raw.update({
-                'registry-location': registry_location
-            })
+            relation.to_publish_raw.update({"registry-location": registry_location})
 
     def set_cohort_keys(self, cohort_keys):
         """
         Send the cohort snapshot keys.
         """
         for relation in self.relations:
-            relation.to_publish['cohort-keys'] = cohort_keys
+            relation.to_publish["cohort-keys"] = cohort_keys
 
     def set_default_cni(self, default_cni):
         """
@@ -149,7 +142,7 @@ class KubeControlProvider(Endpoint):
         been chosen then "" can be sent instead.
         """
         for relation in self.relations:
-            relation.to_publish['default-cni'] = default_cni
+            relation.to_publish["default-cni"] = default_cni
 
     def set_api_endpoints(self, endpoints):
         """
@@ -157,11 +150,11 @@ class KubeControlProvider(Endpoint):
         """
         endpoints = sorted(endpoints)
         for relation in self.relations:
-            relation.to_publish['api-endpoints'] = endpoints
+            relation.to_publish["api-endpoints"] = endpoints
 
     def set_has_xcp(self, has_xcp):
         """
         Set the flag indicating that an external cloud provider is in use.
         """
         for relation in self.relations:
-            relation.to_publish['has-xcp'] = bool(has_xcp)
+            relation.to_publish["has-xcp"] = bool(has_xcp)
