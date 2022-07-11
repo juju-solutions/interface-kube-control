@@ -9,16 +9,11 @@ from ops.charm import RelationBrokenEvent, CharmBase
 from ops.interface_kube_control import KubeControlRequirer
 
 
-@pytest.fixture
-def charm():
-    mock_charm = mock.MagicMock(auto_spec=CharmBase)
-    mock_charm.unit.name = "test"
-    yield mock_charm
-
-
 @pytest.fixture(scope="function")
-def kube_control_requirer(charm):
-    yield KubeControlRequirer(charm)
+def kube_control_requirer():
+    mock_charm = mock.MagicMock(auto_spec=CharmBase)
+    mock_charm.framework.model.unit.name = "test/0"
+    yield KubeControlRequirer(mock_charm)
 
 
 @pytest.fixture(autouse=True)
@@ -70,9 +65,8 @@ def test_is_ready_success(kube_control_requirer, relation_data):
         assert kube_control_requirer.is_ready is True
 
 
-def test_create_kubeconfig(
-    charm, kube_control_requirer, relation_data, mock_ca_cert, tmpdir
-):
+def test_create_kubeconfig(kube_control_requirer, relation_data, mock_ca_cert, tmpdir):
+    unit_name = kube_control_requirer.model.unit.name
     with mock.patch.object(
         KubeControlRequirer, "relation", new_callable=mock.PropertyMock
     ) as mock_prop:
@@ -85,15 +79,16 @@ def test_create_kubeconfig(
         # First run creates a new file
         assert not kube_config.exists()
         kube_control_requirer.create_kubeconfig(
-            mock_ca_cert, kube_config, "ubuntu", charm.unit.name
+            mock_ca_cert, kube_config, "ubuntu", unit_name
         )
         config = yaml.safe_load(kube_config.read_text())
         assert config["kind"] == "Config"
+        assert config["users"][0]["user"]["token"] == "admin::redacted"
 
         # Second call alters existing file
         kube_config.write_text("")
         kube_control_requirer.create_kubeconfig(
-            mock_ca_cert, kube_config, "ubuntu", charm.unit.name
+            mock_ca_cert, kube_config, "ubuntu", unit_name
         )
         config = yaml.safe_load(kube_config.read_text())
         assert config["kind"] == "Config"

@@ -75,7 +75,6 @@ class KubeControlRequirer(Object):
 
     def __init__(self, charm: CharmBase, endpoint: str = "kube-control"):
         super().__init__(charm, f"relation-{endpoint}")
-        self.charm = charm
         self.endpoint = endpoint
 
     @cached_property
@@ -226,7 +225,7 @@ class KubeControlRequirer(Object):
                          system:masters.  #wokeignore:rule=master
         """
         for relation in self.model.relations:
-            relation.data[self.charm.unit].update(
+            relation.data[self.model.unit].update(
                 dict(kubelet_user=user, auth_group=group)
             )
 
@@ -236,7 +235,7 @@ class KubeControlRequirer(Object):
         """
         log("Setting gpu={} on kube-control relation".format(enabled))
         for relation in self.model.relations:
-            relation.data[self.charm.unit].update(dict(gpu=enabled))
+            relation.data[self.model.unit].update(dict(gpu=enabled))
 
     def get_cluster_tag(self):
         """
@@ -273,4 +272,4 @@ class KubeControlRequirer(Object):
     @property
     def has_xcp(self):
         """The has-xcp value."""
-        return self._value("has-xcp")
+        return self._value("has-xcp") or False

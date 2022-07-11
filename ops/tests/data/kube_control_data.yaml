@@ -13,10 +13,10 @@ cohort-keys: |-
 creds: |-
   {
     "test/0": {
-      "client_token": "admin::reacted",
-      "kubelet_token": "azure-cloud-provider/0::reacted",
-      "proxy_token": "kube-proxy::reacted", 
-      "scope": "kubernetes-worker/0"
+      "client_token": "admin::redacted",
+      "kubelet_token": "test/0::redacted",
+      "proxy_token": "kube-proxy::redacted", 
+      "scope": "test/0"
     }
   }
 default-cni: '""'
