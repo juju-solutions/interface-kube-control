@@ -18,7 +18,13 @@ from charms.reactive import (
 )
 
 from charmhelpers.core.hookenv import log
-from models import Taint, Label
+
+try:
+    from .models import Taint, Label
+except ImportError:
+    # when this code is under test...it's not installed in a package
+    # so catching this exception is simply for the test framework
+    from models import Taint, Label
 
 
 class KubeControlRequirer(Endpoint):

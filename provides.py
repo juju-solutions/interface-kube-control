@@ -14,7 +14,13 @@ from typing import List, Union
 from charms.reactive import Endpoint, toggle_flag, set_flag, data_changed
 
 from charmhelpers.core import hookenv, unitdata
-from models import Taint, Label, DecodeError
+
+try:
+    from .models import Taint, Label, DecodeError
+except ImportError:
+    # when this code is under test...it's not installed in a package
+    # so catching this exception is simply for the test framework
+    from models import Taint, Label, DecodeError
 
 DB = unitdata.kv()
 
