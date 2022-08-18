@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 import provides
-from models import Taint, Label, Effect
+from models import DecodeError, Taint, Label, Effect
 
 
 def test_set_default_cni():
@@ -24,8 +24,12 @@ def test_set_default_cni():
             ["test.io/key=value:NoSchedule"],
             ["test.io/key=value:NoSchedule"],
         ),
+        (
+            ["test.io/key:NoSchedule"],
+            ["test.io/key:NoSchedule"],
+        ),
     ],
-    ids=["empty", "single object taint", "single str taint"],
+    ids=["empty", "single object taint", "single str taint", "taint without value"],
 )
 def test_set_taints(taints, expected):
     provider = provides.KubeControlProvider()
@@ -56,3 +60,17 @@ def test_set_labels(labels, expected):
     assert provider.set_controller_labels(labels) is provider
     for relation in provider.relations:
         relation.to_publish.__setitem__.assert_called_once_with("labels", expected)
+
+
+@pytest.mark.parametrize("taint", ["missing colon", "too:many:colons", "bad:effect"])
+def test_set_taint_failure(taint):
+    provider = provides.KubeControlProvider()
+    with pytest.raises(DecodeError):
+        provider.set_controller_taints([taint])
+
+
+@pytest.mark.parametrize("label", ["missing equals", "too=many=equals"])
+def test_set_label_failure(label):
+    provider = provides.KubeControlProvider()
+    with pytest.raises(DecodeError):
+        provider.set_controller_labels([label])

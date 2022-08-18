@@ -14,7 +14,7 @@ from typing import List, Union
 from charms.reactive import Endpoint, toggle_flag, set_flag, data_changed
 
 from charmhelpers.core import hookenv, unitdata
-from models import Taint, Label
+from models import Taint, Label, DecodeError
 
 DB = unitdata.kv()
 
@@ -23,6 +23,8 @@ class KubeControlProvider(Endpoint):
     """
     Implements the kubernetes-control-plane side of the kube-control interface.
     """
+
+    DecodeError = DecodeError
 
     def manage_flags(self):
         toggle_flag(self.expand_name("{endpoint_name}.connected"), self.is_joined)
