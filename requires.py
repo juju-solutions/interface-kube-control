@@ -11,12 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List
 from charms.reactive import (
     Endpoint,
     toggle_flag,
 )
 
 from charmhelpers.core.hookenv import log
+from models import Taint, Label
 
 
 class KubeControlRequirer(Endpoint):
@@ -44,6 +46,14 @@ class KubeControlRequirer(Endpoint):
         toggle_flag(
             self.expand_name("{endpoint_name}.registry_location.available"),
             self.is_joined and self.get_registry_location(),
+        )
+        toggle_flag(
+            self.expand_name("{endpoint_name}.controller_taints.available"),
+            self.is_joined and self.get_controller_taints(),
+        )
+        toggle_flag(
+            self.expand_name("{endpoint_name}.controller_labels.available"),
+            self.is_joined and self.get_controller_labels(),
         )
         toggle_flag(
             self.expand_name("{endpoint_name}.cohort_keys.available"),
@@ -80,7 +90,7 @@ class KubeControlRequirer(Endpoint):
 
     def get_dns(self):
         """
-        Return DNS info provided by the master.
+        Return DNS info provided by the control-plane.
         """
         rx = self.all_joined_units.received_raw
 
@@ -93,7 +103,7 @@ class KubeControlRequirer(Endpoint):
 
     def dns_ready(self):
         """
-        Return True if we have all DNS info from the master.
+        Return True if we have all DNS info from the control-plane.
         """
         keys = ["port", "domain", "sdn-ip", "enable-kube-dns"]
         dns_info = self.get_dns()
@@ -104,7 +114,7 @@ class KubeControlRequirer(Endpoint):
 
     def set_auth_request(self, kubelet, group="system:nodes"):
         """
-        Tell the master that we are requesting auth, and to use this
+        Tell the control-plane that we are requesting auth, and to use this
         hostname for the kubelet system account.
 
         Param groups - Determines the level of eleveted privleges of the
@@ -118,7 +128,7 @@ class KubeControlRequirer(Endpoint):
 
     def set_gpu(self, enabled=True):
         """
-        Tell the master that we're gpu-enabled (or not).
+        Tell the control-plane that we're gpu-enabled (or not).
         """
         log("Setting gpu={} on kube-control relation".format(enabled))
         for relation in self.relations:
@@ -146,7 +156,7 @@ class KubeControlRequirer(Endpoint):
     @property
     def cohort_keys(self):
         """
-        The cohort snapshot keys sent by the masters.
+        The cohort snapshot keys sent by the control-planes.
         """
         return self.all_joined_units.received["cohort-keys"]
 
@@ -171,3 +181,13 @@ class KubeControlRequirer(Endpoint):
         The flag indicating whether an external cloud provider is in use.
         """
         return self.all_joined_units.received.get("has-xcp", False)
+
+    def get_controller_taints(self) -> List[Taint]:
+        """Returns a list of taints configured on the control-plane nodes."""
+        taints = self.all_joined_units.received.get("taints", [])
+        return [Taint.decode(_) for _ in taints]
+
+    def get_controller_labels(self) -> List[Label]:
+        """Returns a list of lables configured on the control-plane nodes."""
+        labels = self.all_joined_units.received.get("labels", [])
+        return [Label.decode(_) for _ in labels]

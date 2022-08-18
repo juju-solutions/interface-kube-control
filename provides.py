@@ -10,17 +10,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import List
 from charms.reactive import Endpoint, toggle_flag, set_flag, data_changed
 
 from charmhelpers.core import hookenv, unitdata
-
+from models import Taint, Label
 
 DB = unitdata.kv()
 
 
 class KubeControlProvider(Endpoint):
     """
-    Implements the kubernetes-master side of the kube-control interface.
+    Implements the kubernetes-control-plane side of the kube-control interface.
     """
 
     def manage_flags(self):
@@ -158,3 +159,19 @@ class KubeControlProvider(Endpoint):
         """
         for relation in self.relations:
             relation.to_publish["has-xcp"] = bool(has_xcp)
+
+    def set_controller_taints(self, taints: List[Taint]) -> "KubeControlProvider":
+        """
+        Sends the juju config taints of the control-plane.
+        """
+        for relation in self.relations:
+            relation.to_publish["taints"] = [str(_) for _ in taints]
+        return self
+
+    def set_controller_labels(self, labels: List[Label]) -> "KubeControlProvider":
+        """
+        Sends the juju config labels of the control-plane.
+        """
+        for relation in self.relations:
+            relation.to_publish["labels"] = [str(_) for _ in labels]
+        return self

@@ -1,17 +1,17 @@
 # kube-control interface
 
-This interface provides communication between master and workers in a
+This interface provides communication between control-plane and dependents in a
 Kubernetes cluster.
 
 
-## Provides (kubernetes-master side)
+## Provides (kubernetes-control-plane side)
 
 
 ### States
 
 * `kube-control.connected`
 
-  Enabled when a worker has joined the relation.
+  Enabled when a dependent has joined the relation.
 
 * `kube-control.gpu.available`
 
@@ -19,8 +19,7 @@ Kubernetes cluster.
 
 * `kube-control.departed`
 
-  Enabled when any worker has indicated that it is leaving the cluster.
-
+  Enabled when any dependent has indicated that it is leaving the cluster.
 
 * `kube-control.auth.requested`
 
@@ -32,7 +31,7 @@ Kubernetes cluster.
 
 * `kube_control.set_dns(port, domain, sdn_ip)`
 
-  Sends DNS info to the connected worker(s).
+  Sends DNS info to the connected dependent(s).
 
 
 * `kube_control.auth_user()`
@@ -48,7 +47,7 @@ Kubernetes cluster.
 * `kube_control.set_cluster_tag(cluster_tag)`
 
   Sends a tag used to identify resources that are part of the cluster to the
-  connected worker(s).
+  connected dependents(s).
 
 * `kube_control.flush_departed()`
 
@@ -57,7 +56,13 @@ Kubernetes cluster.
   Invoking this method will also remove the `kube-control.departed` state
 
 * `kube_control.set_registry_location(registry_location)`
-  Sends the container image registry location to the connected worker(s).
+  Sends the container image registry location to the connected dependents(s).
+
+* `kube_control.set_controller_taints(taints)`
+  Sends the juju config taints of the control-plane to the connected dependents(s).
+
+* `kube_control.set_controller_labels(labels)`
+  Sends the juju config labels of the control-plane to the connected dependents(s).
 
 ### Examples
 
@@ -83,41 +88,49 @@ def flush_auth_for_departed(kube_control):
 
 ```
 
-## Requires (kubernetes-worker side)
+## Requires (kubernetes-worker or other dependents side)
 
 
 ### States
 
 * `kube-control.connected`
 
-  Enabled when a master has joined the relation.
+  Enabled when a control-plane unit has joined the relation.
 
 * `kube-control.dns.available`
 
-  Enabled when DNS info is available from the master.
+  Enabled when DNS info is available.
 
 * `kube-control.auth.available`
 
-  Enabled when authentication credentials are present from the master.
+  Enabled when authentication credentials are available.
 
 * `kube-control.cluster_tag.available`
 
-  Enabled when cluster tag is present from the master.
+  Enabled when cluster tag is available.
 
 * `kube-control.registry_location.available`
 
-  Enabled when registry location is present from the master.
+  Enabled when registry location is available.
+
+* `kube-control.controller_taints.available`
+
+  Enabled when control-plane taints are available.
+
+* `kube-control.controller_labels.available`
+
+  Enabled when control-plane labels are available.
 
 ### Methods
 
 * `kube_control.get_dns()`
 
-  Returns a dictionary of DNS info sent by the master. The keys in the
+  Returns a dictionary of DNS info sent by the controller. The keys in the
   dict are: domain, private-address, sdn-ip, port.
 
 * `kube_control.set_gpu(enabled=True)`
 
-  Tell the master that we are gpu-enabled.
+  Tell the controller that we are gpu-enabled.
 
 *  `kube_control.get_auth_credentials(user)`
 
@@ -125,16 +138,25 @@ def flush_auth_for_departed(kube_control):
 
 *  `set_auth_request(kubelet, group='system:nodes')`
 
-  Issue an authentication request against the master to receive token based
+  Issue an authentication request against the controller to receive token based
   auth credentials in return.
 
 * `kube_control.get_cluster_tag()`
 
-  Returns the cluster tag provided by the master.
+  Returns the cluster tag.
 
 * `kube_control.get_registry_location()`
 
-  Returns the container image registry location provided by the master.
+  Returns the container image registry location.
+
+* `kube_control.get_controller_taints()`
+
+  Returns a list of taints configured on the control-plane nodes.
+
+* `kube_control.get_controller_labels()`
+
+  Returns a list of labels configured on the control-plane nodes.
+
 
 ### Examples
 
@@ -151,7 +173,7 @@ def on_dns_available(kube_control):
 
 @when('kube-control.connected')
 def send_gpu(kube_control):
-    # Tell the master that we're gpu-enabled
+    # Tell the control-plane that we're gpu-enabled
     kube_control.set_gpu(True)
 
 @when('kube-control.auth.available')
