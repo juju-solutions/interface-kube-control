@@ -1,5 +1,4 @@
 from typing import Union
-from dataclasses import dataclass
 from enum import Enum, auto
 
 
@@ -19,17 +18,20 @@ class _ModelObject:
         return isinstance(source, cls)
 
 
-@dataclass
 class Taint(_ModelObject):
     """Definition of a Node Taint."""
 
-    key: str
-    value: str
-    effect: Effect
+    def __init__(self, key: str, value: str, effect: Effect) -> None:
+        self.key = key
+        self.value = value
+        self.effect = effect
 
     def __str__(self):
         """Encode a taint object to a string."""
         return f"{self.key}={self.value}:{self.effect.name}"
+
+    def __eq__(self, __o: object) -> bool:
+        return (self.key, self.value, self.effect) == (__o.key, __o.value, __o.effect)
 
     @classmethod
     def decode(cls, source: str):
@@ -39,12 +41,15 @@ class Taint(_ModelObject):
         return cls(key, value, Effect[effect])
 
 
-@dataclass
 class Label(_ModelObject):
     """Definition of a Label."""
 
-    key: str
-    value: str
+    def __init__(self, key: str, value: str) -> None:
+        self.key = key
+        self.value = value
+
+    def __eq__(self, __o: object) -> bool:
+        return (self.key, self.value) == (__o.key, __o.value)
 
     def __str__(self):
         """Encode a label object to a string."""

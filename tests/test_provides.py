@@ -30,7 +30,7 @@ def test_set_default_cni():
 def test_set_taints(taints, expected):
     provider = provides.KubeControlProvider()
     provider.relations = [MagicMock(), MagicMock()]
-    assert provider.set_controller_taints(taints)
+    assert provider.set_controller_taints(taints) is provider
     for relation in provider.relations:
         relation.to_publish.__setitem__.assert_called_once_with("taints", expected)
 
@@ -53,6 +53,6 @@ def test_set_taints(taints, expected):
 def test_set_labels(labels, expected):
     provider = provides.KubeControlProvider()
     provider.relations = [MagicMock(), MagicMock()]
-    assert provider.set_controller_labels(labels)
+    assert provider.set_controller_labels(labels) is provider
     for relation in provider.relations:
         relation.to_publish.__setitem__.assert_called_once_with("labels", expected)
