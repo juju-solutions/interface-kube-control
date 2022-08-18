@@ -11,6 +11,7 @@ def test_set_default_cni():
     for relation in provider.relations:
         relation.to_publish.__setitem__.assert_called_once_with("default-cni", "test")
 
+
 @pytest.mark.parametrize(
     "taints, expected",
     [
@@ -19,8 +20,12 @@ def test_set_default_cni():
             [Taint("test.io/key", "value", Effect.NoSchedule)],
             ["test.io/key=value:NoSchedule"],
         ),
+        (
+            ["test.io/key=value:NoSchedule"],
+            ["test.io/key=value:NoSchedule"],
+        ),
     ],
-    ids=["empty", "single taint"]
+    ids=["empty", "single object taint", "single str taint"],
 )
 def test_set_taints(taints, expected):
     provider = provides.KubeControlProvider()
@@ -38,8 +43,12 @@ def test_set_taints(taints, expected):
             [Label("test.io/key", "value")],
             ["test.io/key=value"],
         ),
+        (
+            ["test.io/key=value"],
+            ["test.io/key=value"],
+        ),
     ],
-    ids=["empty", "single label"]
+    ids=["empty", "single object label", "single str label"],
 )
 def test_set_labels(labels, expected):
     provider = provides.KubeControlProvider()

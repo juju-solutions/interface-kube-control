@@ -1,3 +1,4 @@
+from typing import Union
 from dataclasses import dataclass
 from enum import Enum, auto
 
@@ -10,8 +11,16 @@ class Effect(Enum):
     NoExecute = auto()
 
 
+class _ModelObject:
+    @classmethod
+    def valid(cls, source: Union[str, "_ModelObject"]) -> "_ModelObject":
+        if isinstance(source, str):
+            source = cls.decode(source)
+        return isinstance(source, cls)
+
+
 @dataclass
-class Taint:
+class Taint(_ModelObject):
     """Definition of a Node Taint."""
 
     key: str
@@ -31,7 +40,7 @@ class Taint:
 
 
 @dataclass
-class Label:
+class Label(_ModelObject):
     """Definition of a Label."""
 
     key: str
