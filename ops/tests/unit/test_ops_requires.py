@@ -45,7 +45,7 @@ def test_is_ready_no_relation(kube_control_requirer, event_type):
 
 
 def test_is_ready_invalid_data(kube_control_requirer, relation_data):
-    relation_data["domain"] = 123
+    relation_data["creds"] = 123
     with mock.patch.object(
         KubeControlRequirer, "relation", new_callable=mock.PropertyMock
     ) as mock_prop:

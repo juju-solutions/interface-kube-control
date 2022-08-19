@@ -7,15 +7,16 @@ style rather than the reactive style.
 """
 
 import base64
-import json
 import logging
 from os import PathLike
 from pathlib import Path
 from typing import Optional, Mapping
 
-import jsonschema
 import yaml
 from backports.cached_property import cached_property
+from .model import Data
+from pydantic import ValidationError
+
 from ops.charm import CharmBase, RelationBrokenEvent
 from ops.framework import Object
 from ops.model import Relation
@@ -28,51 +29,6 @@ class KubeControlRequirer(Object):
     Implements the requirer side of the kube-control interface.
     """
 
-    SCHEMA = {
-        "type": "object",
-        "properties": {
-            "api-endpoints": dict(
-                type="array", json=True, items=dict(type="string", format="uri")
-            ),
-            "cluster-tag": dict(type="string"),
-            "cohort-keys": dict(
-                type="object", json=True, additionalProperties=dict(type="string")
-            ),
-            "creds": dict(
-                type="object",
-                json=True,
-                additionalProperties=dict(
-                    type="object",
-                    properties=dict(
-                        client_token=dict(type="string"),
-                        kubelet_token=dict(type="string"),
-                        proxy_token=dict(type="string"),
-                        scope=dict(type="string"),
-                    ),
-                    required=["client_token", "kubelet_token", "proxy_token", "scope"],
-                ),
-            ),
-            "default-cni": dict(type="string", json=True),
-            "domain": dict(type="string"),
-            "enable-kube-dns": dict(type="boolean", json=True),
-            "has-xcp": dict(type="boolean", json=True),
-            "port": dict(type="integer", json=True),
-            "registry-location": dict(type="string"),
-            "sdn-ip": dict(type="string", format="ipv4"),
-        },
-        "required": [
-            "api-endpoints",
-            "cluster-tag",
-            "creds",
-            "default-cni",
-            "domain",
-            "enable-kube-dns",
-            "has-xcp",
-            "port",
-            "sdn-ip",
-        ],
-    }
-
     def __init__(self, charm: CharmBase, endpoint: str = "kube-control"):
         super().__init__(charm, f"relation-{endpoint}")
         self.endpoint = endpoint
@@ -83,32 +39,11 @@ class KubeControlRequirer(Object):
         return self.model.get_relation(self.endpoint)
 
     @cached_property
-    def _data(self):
-        if not (self.relation and self.relation.units):
-            return {}
-        raw_data = self.relation.data[list(self.relation.units)[0]]
-        data = {}
-        properties = self.SCHEMA["properties"]
-        for field, raw_value in raw_data.items():
-            property_field = properties.get(field)
-            if not property_field:
-                continue
-            json_parse = property_field.get("json")
-            if json_parse:
-                if property_field.get("type") == "boolean":
-                    raw_value = raw_value.lower()
-                try:
-                    data[field] = json.loads(raw_value)
-                except json.JSONDecodeError as e:
-                    log.error(f"Failed to decode relation data in {field}: {e}")
-            else:
-                data[field] = raw_value
-        return data
-
-    def _value(self, key):
-        if not self._data:
-            return None
-        return self._data.get(key)
+    def _data(self) -> Data:
+        raw_data = {}
+        if self.relation and self.relation.units:
+            raw_data = self.relation.data[list(self.relation.units)[0]]
+        return Data(**raw_data)
 
     def evaluate_relation(self, event) -> Optional[str]:
         """Determine if relation is ready."""
@@ -125,8 +60,8 @@ class KubeControlRequirer(Object):
     def is_ready(self):
         """Whether the request for this instance has been completed."""
         try:
-            jsonschema.validate(self._data, self.SCHEMA)
-        except jsonschema.ValidationError:
+            self._data
+        except ValidationError:
             log.error(f"{self.endpoint} relation data not yet valid.")
             return False
         return True
@@ -179,14 +114,14 @@ class KubeControlRequirer(Object):
 
     def get_auth_credentials(self, user) -> Optional[Mapping[str, str]]:
         """Return the authentication credentials."""
-        creds = self._value("creds") or {}
+        creds = self._data.creds
 
         if user in creds:
             return {
                 "user": user,
-                "kubelet_token": creds[user]["kubelet_token"],
-                "proxy_token": creds[user]["proxy_token"],
-                "client_token": creds[user]["client_token"],
+                "kubelet_token": creds[user].kubelet_token,
+                "proxy_token": creds[user].proxy_token,
+                "client_token": creds[user].client_token,
             }
         return None
 
@@ -195,10 +130,10 @@ class KubeControlRequirer(Object):
         Return DNS info provided by the control-plane.
         """
         return {
-            "port": self._value("port"),
-            "domain": self._value("domain"),
-            "sdn-ip": self._value("sdn-ip"),
-            "enable-kube-dns": self._value("enable-kube-dns"),
+            "port": self._data.port,
+            "domain": self._data.domain,
+            "sdn-ip": self._data.sdn_ip,
+            "enable-kube-dns": self._data.enable_kube_dns,
         }
 
     def dns_ready(self) -> bool:
@@ -241,35 +176,35 @@ class KubeControlRequirer(Object):
         """
         Tag for identifying resources that are part of the cluster.
         """
-        return self._value("cluster-tag")
+        return self._data.cluster_tag
 
     def get_registry_location(self):
         """
         URL for container image registry.
         """
-        return self._value("registry-location")
+        return self._data.registry_location
 
     @property
     def cohort_keys(self):
         """
         The cohort snapshot keys sent by the control-plane.
         """
-        return self._value("cohort-keys")
+        return self._data.cohort_keys
 
     def get_default_cni(self):
         """
         Default CNI network to use.
         """
-        return self._value("default-cni")
+        return self._data.default_cni
 
     def get_api_endpoints(self):
         """
         Returns a list of API endpoint URLs.
         """
-        endpoints = set(self._value("api-endpoints") or [])
+        endpoints = set(map(str,self._data.api_endpoints) or [])
         return sorted(endpoints)
 
     @property
     def has_xcp(self):
         """The has-xcp value."""
-        return self._value("has-xcp") or False
+        return self._data.has_xcp or False
