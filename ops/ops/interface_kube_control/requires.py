@@ -201,7 +201,7 @@ class KubeControlRequirer(Object):
         """
         Returns a list of API endpoint URLs.
         """
-        endpoints = set(map(str,self._data.api_endpoints) or [])
+        endpoints = set(map(str, self._data.api_endpoints) or [])
         return sorted(endpoints)
 
     @property

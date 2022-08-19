@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 class Creds(BaseModel):
     client_token: str
     kubelet_token: str
-    proxy_token : str
+    proxy_token: str
     scope: str
 
 
