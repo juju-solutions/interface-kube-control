@@ -10,11 +10,11 @@ import base64
 import logging
 from os import PathLike
 from pathlib import Path
-from typing import Optional, Mapping
+from typing import Optional, Mapping, List
 
 import yaml
 from backports.cached_property import cached_property
-from .model import Data
+from .model import Data, Taint, Label
 from pydantic import ValidationError
 
 from ops.charm import CharmBase, RelationBrokenEvent
@@ -208,3 +208,11 @@ class KubeControlRequirer(Object):
     def has_xcp(self):
         """The has-xcp value."""
         return self._data.has_xcp or False
+
+    def get_controller_taints(self) -> List[Taint]:
+        """Returns a list of taints configured on the control-plane nodes."""
+        return self._data.taints or []
+
+    def get_controller_labels(self) -> List[Label]:
+        """Returns a list of lables configured on the control-plane nodes."""
+        return self._data.labels or []

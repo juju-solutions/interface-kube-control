@@ -1,5 +1,48 @@
 from pydantic import Field, AnyHttpUrl, BaseModel, Json
 from typing import List, Dict, Optional
+import re
+
+
+class _ValidatedStr:
+    def __init__(self, value, *groups) -> None:
+        self._str = value
+        self.groups = groups
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not isinstance(v, str):
+            raise TypeError("string required")
+        m = cls.REGEX.match(v)
+        if not m:
+            raise ValueError("invalid format")
+        return cls(v, *m.groups())
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self._str},*{self.groups})"
+
+    @property
+    def key(self) -> str:
+        return self.groups[0]
+
+    @property
+    def value(self) -> Optional[str]:
+        return self.groups[1]
+
+
+class Label(_ValidatedStr):
+    REGEX = re.compile(r"^([\w\d\-\.\/]+)=([\w\d\-\.]+)$")
+
+
+class Taint(_ValidatedStr):
+    REGEX = re.compile(r"^([\w\d\-\.\/]+)(?:=([\w\d\-\.]+))?:([\w\d\-\.]+)$")
+
+    @property
+    def effect(self) -> str:
+        return self.groups[2]
 
 
 class Creds(BaseModel):
@@ -21,5 +64,5 @@ class Data(BaseModel):
     port: Json[int] = Field(alias="port")
     sdn_ip: str = Field(alias="sdn-ip")
     registry_location: str = Field(alias="registry-location")
-    taints: Optional[List[str]] = Field(alias="taints")
-    labels: Optional[List[str]] = Field(alias="labels")
+    taints: Optional[Json[List[Taint]]] = Field(alias="taints")
+    labels: Optional[Json[List[Label]]] = Field(alias="labels")

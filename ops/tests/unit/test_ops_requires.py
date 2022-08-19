@@ -92,3 +92,24 @@ def test_create_kubeconfig(kube_control_requirer, relation_data, mock_ca_cert, t
         )
         config = yaml.safe_load(kube_config.read_text())
         assert config["kind"] == "Config"
+
+
+def test_taints_and_labels(kube_control_requirer, relation_data):
+    with mock.patch.object(
+        KubeControlRequirer, "relation", new_callable=mock.PropertyMock
+    ) as mock_prop:
+        relation = mock_prop.return_value
+        relation.units = ["remote/0"]
+        relation.data = {"remote/0": relation_data}
+        taints = kube_control_requirer.get_controller_taints()
+        labels = kube_control_requirer.get_controller_labels()
+        assert taints[0].groups == (
+            "node-role.kubernetes.io/control-plane",
+            "true",
+            "NoSchedule",
+        )
+        assert taints[0].key == "node-role.kubernetes.io/control-plane"
+        assert taints[0].value == "true"
+        assert taints[0].effect == "NoSchedule"
+
+        assert labels[0].groups == ("node-role.kubernetes.io/control-plane", "true")
