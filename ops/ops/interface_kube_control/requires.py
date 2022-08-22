@@ -159,8 +159,8 @@ class KubeControlRequirer(Object):
                          cluster via changing to
                          system:masters.  #wokeignore:rule=master
         """
-        for relation in self.model.relations:
-            relation.data[self.model.unit].update(
+        if self.relation:
+            self.relation.data[self.model.unit].update(
                 dict(kubelet_user=user, auth_group=group)
             )
 
