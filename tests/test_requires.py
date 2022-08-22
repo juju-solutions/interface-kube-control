@@ -17,8 +17,12 @@ def test_get_default_cni():
             ["test.io/key=value:NoSchedule"],
             [Taint("test.io/key", "value", Effect.NoSchedule)],
         ),
+        (
+            ["test.io/key:NoSchedule"],
+            [Taint("test.io/key", None, Effect.NoSchedule)],
+        ),
     ],
-    ids=["empty", "single taint"],
+    ids=["empty", "single taint", "label without empty value"],
 )
 def test_get_taints(relation_field, expected):
     requirer = requires.KubeControlRequirer()
@@ -34,8 +38,12 @@ def test_get_taints(relation_field, expected):
             ["test.io/key=value"],
             [Label("test.io/key", "value")],
         ),
+        (
+            ["test.io/key="],
+            [Label("test.io/key", "")],
+        ),
     ],
-    ids=["empty", "single label"],
+    ids=["empty", "single label", "label without empty value"],
 )
 def test_get_labels(relation_field, expected):
     requirer = requires.KubeControlRequirer()

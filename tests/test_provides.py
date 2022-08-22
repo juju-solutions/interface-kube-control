@@ -28,8 +28,18 @@ def test_set_default_cni():
             ["test.io/key:NoSchedule"],
             ["test.io/key:NoSchedule"],
         ),
+        (
+            ["test.io/key=:NoSchedule"],
+            ["test.io/key=:NoSchedule"],
+        ),
     ],
-    ids=["empty", "single object taint", "single str taint", "taint without value"],
+    ids=[
+        "empty",
+        "single object taint",
+        "single str taint",
+        "taint without value",
+        "taint with empty string value",
+    ],
 )
 def test_set_taints(taints, expected):
     provider = provides.KubeControlProvider()
@@ -51,8 +61,12 @@ def test_set_taints(taints, expected):
             ["test.io/key=value"],
             ["test.io/key=value"],
         ),
+        (
+            ["test.io/key="],
+            ["test.io/key="],
+        ),
     ],
-    ids=["empty", "single object label", "single str label"],
+    ids=["empty", "single object label", "single str label", "empty label value"],
 )
 def test_set_labels(labels, expected):
     provider = provides.KubeControlProvider()
@@ -62,7 +76,15 @@ def test_set_labels(labels, expected):
         relation.to_publish.__setitem__.assert_called_once_with("labels", expected)
 
 
-@pytest.mark.parametrize("taint", ["missing colon", "too:many:colons", "bad:effect"])
+@pytest.mark.parametrize(
+    "taint",
+    [
+        "missing colon",
+        "too:many:colons",
+        "bad:effect",
+        "too=many=equals:NoSchedule",
+    ],
+)
 def test_set_taint_failure(taint):
     provider = provides.KubeControlProvider()
     with pytest.raises(DecodeError):

@@ -43,13 +43,18 @@ class Taint(_ModelObject):
         """Decode a taint object from a string."""
         try:
             key_value, effect = source.split(":")
-            key, *value = key_value.split("=", 1)
             effect_value = Effect[effect]
         except ValueError as ex:
             raise DecodeError("Taint must contain a single ':'") from ex
         except KeyError as ex:
             options = ",".join([_.name for _ in Effect])
             raise DecodeError(f"Taint effect must be {options}") from ex
+
+        key, *value = key_value.split("=")
+        if len(value) > 1:
+            # Taints aren't required to have a value
+            # therefore value can have 0 or 1 elements, but not more than 1
+            raise DecodeError("Taint cannot contain more than one '='")
         return cls(key, next(iter(value), None), effect_value)
 
 
