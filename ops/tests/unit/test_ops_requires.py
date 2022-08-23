@@ -117,11 +117,13 @@ def test_taints_and_labels(kube_control_requirer, relation_data):
         labels = kube_control_requirer.get_controller_labels()
         assert taints[0].groups == (
             "node-role.kubernetes.io/control-plane",
-            "true",
+            None,
             "NoSchedule",
         )
         assert taints[0].key == "node-role.kubernetes.io/control-plane"
-        assert taints[0].value == "true"
+        assert taints[0].value is None, "Taints may not have a value, it can be None"
         assert taints[0].effect == "NoSchedule"
 
-        assert labels[0].groups == ("node-role.kubernetes.io/control-plane", "true")
+        assert labels[0].groups == ("node-role.kubernetes.io/control-plane", "")
+        assert labels[0].key == "node-role.kubernetes.io/control-plane"
+        assert labels[0].value == "", "Labels must have a value, it can be an empty str"

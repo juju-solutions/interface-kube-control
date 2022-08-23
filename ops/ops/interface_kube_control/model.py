@@ -34,11 +34,11 @@ class _ValidatedStr:
 
 
 class Label(_ValidatedStr):
-    REGEX = re.compile(r"^([\w\d\-\.\/]+)=([\w\d\-\.]+)$")
+    REGEX = re.compile(r"^([\w\d\-\.\/]+)=([\w\d\-\.]*)$")
 
 
 class Taint(_ValidatedStr):
-    REGEX = re.compile(r"^([\w\d\-\.\/]+)(?:=([\w\d\-\.]+))?:([\w\d\-\.]+)$")
+    REGEX = re.compile(r"^([\w\d\-\.\/]+)(?:=([\w\d\-\.]*))?:([\w\d\-\.]+)$")
 
     @property
     def effect(self) -> str:

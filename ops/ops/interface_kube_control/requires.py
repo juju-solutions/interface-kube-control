@@ -61,8 +61,8 @@ class KubeControlRequirer(Object):
         """Whether the request for this instance has been completed."""
         try:
             self._data
-        except ValidationError:
-            log.error(f"{self.endpoint} relation data not yet valid.")
+        except ValidationError as ve:
+            log.error(f"{self.endpoint} relation data not yet valid. ({ve}")
             return False
         if self._data is None:
             log.error(f"{self.endpoint} relation data not yet available.")
