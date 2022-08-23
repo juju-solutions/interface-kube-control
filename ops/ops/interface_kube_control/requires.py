@@ -39,11 +39,11 @@ class KubeControlRequirer(Object):
         return self.model.get_relation(self.endpoint)
 
     @cached_property
-    def _data(self) -> Data:
-        raw_data = {}
+    def _data(self) -> Optional[Data]:
         if self.relation and self.relation.units:
             raw_data = self.relation.data[list(self.relation.units)[0]]
-        return Data(**raw_data)
+            return Data(**raw_data)
+        return None
 
     def evaluate_relation(self, event) -> Optional[str]:
         """Determine if relation is ready."""
@@ -63,6 +63,9 @@ class KubeControlRequirer(Object):
             self._data
         except ValidationError:
             log.error(f"{self.endpoint} relation data not yet valid.")
+            return False
+        if self._data is None:
+            log.error(f"{self.endpoint} relation data not yet available.")
             return False
         return True
 
@@ -114,6 +117,9 @@ class KubeControlRequirer(Object):
 
     def get_auth_credentials(self, user) -> Optional[Mapping[str, str]]:
         """Return the authentication credentials."""
+        if not self.is_ready:
+            return None
+
         creds = self._data.creds
 
         if user in creds:
@@ -130,10 +136,10 @@ class KubeControlRequirer(Object):
         Return DNS info provided by the control-plane.
         """
         return {
-            "port": self._data.port,
-            "domain": self._data.domain,
-            "sdn-ip": self._data.sdn_ip,
-            "enable-kube-dns": self._data.enable_kube_dns,
+            "port": self._data.port if self.is_ready else None,
+            "domain": self._data.domain if self.is_ready else None,
+            "sdn-ip": self._data.sdn_ip if self.is_ready else None,
+            "enable-kube-dns": self._data.enable_kube_dns if self.is_ready else None,
         }
 
     def dns_ready(self) -> bool:
@@ -176,43 +182,44 @@ class KubeControlRequirer(Object):
         """
         Tag for identifying resources that are part of the cluster.
         """
-        return self._data.cluster_tag
+        return self._data.cluster_tag if self.is_ready else None
 
     def get_registry_location(self):
         """
         URL for container image registry.
         """
-        return self._data.registry_location
+        return self._data.registry_location if self.is_ready else None
 
     @property
     def cohort_keys(self):
         """
         The cohort snapshot keys sent by the control-plane.
         """
-        return self._data.cohort_keys
+        return self._data.cohort_keys if self.is_ready else None
 
     def get_default_cni(self):
         """
         Default CNI network to use.
         """
-        return self._data.default_cni
+        return self._data.default_cni if self.is_ready else None
 
     def get_api_endpoints(self):
         """
         Returns a list of API endpoint URLs.
         """
-        endpoints = set(map(str, self._data.api_endpoints) or [])
+        api_endpoints = (self.is_ready and self._data.api_endpoints) or []
+        endpoints = set(map(str, api_endpoints))
         return sorted(endpoints)
 
     @property
     def has_xcp(self):
         """The has-xcp value."""
-        return self._data.has_xcp or False
+        return (self.is_ready and self._data.has_xcp) or False
 
     def get_controller_taints(self) -> List[Taint]:
         """Returns a list of taints configured on the control-plane nodes."""
-        return self._data.taints or []
+        return (self.is_ready and self._data.taints) or []
 
     def get_controller_labels(self) -> List[Label]:
         """Returns a list of lables configured on the control-plane nodes."""
-        return self._data.labels or []
+        return (self.is_ready and self._data.labels) or []

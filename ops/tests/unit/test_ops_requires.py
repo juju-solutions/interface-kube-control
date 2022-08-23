@@ -42,6 +42,18 @@ def test_is_ready_no_relation(kube_control_requirer, event_type):
         event.relation = relation
         assert kube_control_requirer.is_ready is False
         assert "Missing" in kube_control_requirer.evaluate_relation(event)
+        assert kube_control_requirer.has_xcp is False
+        assert kube_control_requirer.get_controller_taints() == []
+        assert kube_control_requirer.get_controller_labels() == []
+        assert kube_control_requirer.get_api_endpoints() == []
+        assert kube_control_requirer.get_default_cni() is None
+        assert kube_control_requirer.cohort_keys is None
+        assert kube_control_requirer.get_registry_location() is None
+        assert kube_control_requirer.get_cluster_tag() is None
+        assert kube_control_requirer.dns_ready() is False
+        assert len(kube_control_requirer.get_dns()) == 4
+        assert not any(kube_control_requirer.get_dns().values())
+        assert kube_control_requirer.get_auth_credentials("bob") is None
 
 
 def test_is_ready_invalid_data(kube_control_requirer, relation_data):
