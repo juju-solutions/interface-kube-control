@@ -10,18 +10,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import List, Union
 from charms.reactive import Endpoint, toggle_flag, set_flag, data_changed
 
 from charmhelpers.core import hookenv, unitdata
 
+try:
+    from .models import Taint, Label, DecodeError
+except ImportError:
+    # when this code is under test...it's not installed in a package
+    # so catching this exception is simply for the test framework
+    from models import Taint, Label, DecodeError
 
 DB = unitdata.kv()
 
 
 class KubeControlProvider(Endpoint):
     """
-    Implements the kubernetes-master side of the kube-control interface.
+    Implements the kubernetes-control-plane side of the kube-control interface.
     """
+
+    DecodeError = DecodeError
 
     def manage_flags(self):
         toggle_flag(self.expand_name("{endpoint_name}.connected"), self.is_joined)
@@ -158,3 +167,27 @@ class KubeControlProvider(Endpoint):
         """
         for relation in self.relations:
             relation.to_publish["has-xcp"] = bool(has_xcp)
+
+    def set_controller_taints(
+        self, taints: List[Union[Taint, str]]
+    ) -> "KubeControlProvider":
+        """
+        Sends the juju config taints of the control-plane.
+        """
+        taints = [str(_) for _ in taints if Taint.valid(_)]
+        dedup = sorted(set(taints))
+        for relation in self.relations:
+            relation.to_publish["taints"] = dedup
+        return self
+
+    def set_controller_labels(
+        self, labels: List[Union[Label, str]]
+    ) -> "KubeControlProvider":
+        """
+        Sends the juju config labels of the control-plane.
+        """
+        labels = [str(_) for _ in labels if Label.valid(_)]
+        dedup = sorted(set(labels))
+        for relation in self.relations:
+            relation.to_publish["labels"] = dedup
+        return self
