@@ -175,8 +175,9 @@ class KubeControlProvider(Endpoint):
         Sends the juju config taints of the control-plane.
         """
         taints = [str(_) for _ in taints if Taint.valid(_)]
+        dedup = sorted(set(taints))
         for relation in self.relations:
-            relation.to_publish["taints"] = taints
+            relation.to_publish["taints"] = dedup
         return self
 
     def set_controller_labels(
@@ -186,6 +187,7 @@ class KubeControlProvider(Endpoint):
         Sends the juju config labels of the control-plane.
         """
         labels = [str(_) for _ in labels if Label.valid(_)]
+        dedup = sorted(set(labels))
         for relation in self.relations:
-            relation.to_publish["labels"] = labels
+            relation.to_publish["labels"] = dedup
         return self

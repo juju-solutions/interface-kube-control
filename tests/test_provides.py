@@ -32,13 +32,22 @@ def test_set_default_cni():
             ["test.io/key=:NoSchedule"],
             ["test.io/key=:NoSchedule"],
         ),
+        (
+            [
+                "test.io/key1=:NoSchedule",
+                "test.io/key1=:NoSchedule",
+                "test.io/key2=:NoSchedule",
+            ],
+            ["test.io/key1=:NoSchedule", "test.io/key2=:NoSchedule"],
+        ),
     ],
     ids=[
         "empty",
         "single object taint",
-        "single str taint",
-        "taint without value",
-        "taint with empty string value",
+        "str taint with value",
+        "str taint without value",
+        "str taint with empty string value",
+        "2 identical, 1 unique str taints",
     ],
 )
 def test_set_taints(taints, expected):
@@ -65,8 +74,18 @@ def test_set_taints(taints, expected):
             ["test.io/key="],
             ["test.io/key="],
         ),
+        (
+            ["test.io/key1=value", "test.io/key1=value", "test.io/key2=value"],
+            ["test.io/key1=value", "test.io/key2=value"],
+        ),
     ],
-    ids=["empty", "single object label", "single str label", "empty label value"],
+    ids=[
+        "empty",
+        "single object label",
+        "str label with value",
+        "str label with empty string value",
+        "2 identical, 1 unique str taints",
+    ],
 )
 def test_set_labels(labels, expected):
     provider = provides.KubeControlProvider()
