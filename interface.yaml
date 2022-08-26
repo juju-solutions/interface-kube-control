@@ -4,3 +4,4 @@ version: 1
 maintainer: "Tim Van Steenburgh <tim.van.steenburgh@canonical.com>"
 ignore:
 - tests
+- ops
