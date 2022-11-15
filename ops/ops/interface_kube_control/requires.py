@@ -41,8 +41,10 @@ class KubeControlRequirer(Object):
     @cached_property
     def _data(self) -> Optional[Data]:
         if self.relation and self.relation.units:
-            raw_data = self.relation.data[list(self.relation.units)[0]]
-            return Data(**raw_data)
+            rx = {}
+            for unit in self.relation.units:
+                rx.update(self.relation.data[unit])
+            return Data(**rx)
         return None
 
     def evaluate_relation(self, event) -> Optional[str]:
