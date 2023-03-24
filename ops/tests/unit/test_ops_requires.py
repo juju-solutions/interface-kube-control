@@ -163,4 +163,3 @@ def test_cluster_cidr_ipv6(kube_control_requirer, relation_data):
         relation.data = {"remote/0": relation_data}
         cidr = kube_control_requirer.get_cluster_cidr()
         assert cidr == ip_network("2002:0:0:1234::0/64")
-

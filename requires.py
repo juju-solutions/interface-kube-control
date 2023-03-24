@@ -79,7 +79,6 @@ class KubeControlRequirer(Endpoint):
             self.is_joined and self.get_cluster_cidr(),
         )
 
-
     def get_auth_credentials(self, user):
         """
         Return the authentication credentials.
