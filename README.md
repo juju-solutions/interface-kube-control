@@ -64,6 +64,10 @@ Kubernetes cluster.
 * `kube_control.set_controller_labels(labels)`
   Sends the juju config labels of the control-plane to the connected dependents(s).
 
+* `kube_control.share_cluster_cidr(cluster_cidr)`
+  Shares the cluster_cidr of the connected cni from the control-plane to the connected dependents(s).
+
+
 ### Examples
 
 ```python
@@ -121,6 +125,10 @@ def flush_auth_for_departed(kube_control):
 
   Enabled when control-plane labels are available.
 
+* `kube-control.cluster_cidr.available`
+
+  Enabled when POD cluster-cidr is available.
+
 ### Methods
 
 * `kube_control.get_dns()`
@@ -156,6 +164,10 @@ def flush_auth_for_departed(kube_control):
 * `kube_control.get_controller_labels()`
 
   Returns a list of labels configured on the control-plane nodes.
+
+* `kube_control.get_cluster_cidr()`
+
+  Returns the Pods cluster-cidr shared from control-plane nodes.
 
 
 ### Examples

@@ -1,5 +1,6 @@
+from ipaddress import IPv4Network, IPv6Network
 from pydantic import Field, AnyHttpUrl, BaseModel, Json
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 import re
 
 
@@ -55,6 +56,7 @@ class Creds(BaseModel):
 class Data(BaseModel):
     api_endpoints: Json[List[AnyHttpUrl]] = Field(alias="api-endpoints")
     cluster_tag: str = Field(alias="cluster-tag")
+    cluster_cidr: Union[None, IPv4Network, IPv6Network] = Field(alias="cluster-cidr")
     cohort_keys: Optional[Json[Dict[str, str]]] = Field(alias="cohort-keys")
     creds: Json[Dict[str, Creds]] = Field(alias="creds")
     default_cni: Json[str] = Field(alias="default-cni")

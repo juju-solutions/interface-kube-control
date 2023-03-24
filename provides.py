@@ -10,6 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from ipaddress import IPv4Network, IPv6Network
 from typing import List, Union
 from charms.reactive import Endpoint, toggle_flag, set_flag, data_changed
 
@@ -191,3 +192,11 @@ class KubeControlProvider(Endpoint):
         for relation in self.relations:
             relation.to_publish["labels"] = dedup
         return self
+
+    def share_cluster_cidr(self, cluster_cidr: Union[IPv4Network, IPv6Network]):
+        """
+        Send the Pods cluster-cidr to the remote units.
+        This data originates from the attached cni's charms configuration
+        """
+        for relation in self.relations:
+            relation.to_publish_raw.update({"cluster-cidr": str(cluster_cidr)})

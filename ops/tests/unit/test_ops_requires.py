@@ -1,5 +1,6 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
+from ipaddress import ip_network
 import unittest.mock as mock
 from pathlib import Path
 
@@ -127,3 +128,39 @@ def test_taints_and_labels(kube_control_requirer, relation_data):
         assert labels[0].groups == ("node-role.kubernetes.io/control-plane", "")
         assert labels[0].key == "node-role.kubernetes.io/control-plane"
         assert labels[0].value == "", "Labels must have a value, it can be an empty str"
+
+
+def test_cluster_cidr_undefined(kube_control_requirer, relation_data):
+    with mock.patch.object(
+        KubeControlRequirer, "relation", new_callable=mock.PropertyMock
+    ) as mock_prop:
+        relation = mock_prop.return_value
+        relation.units = ["remote/0"]
+        relation.data = {"remote/0": relation_data}
+        cidr = kube_control_requirer.get_cluster_cidr()
+        assert cidr is None
+
+
+def test_cluster_cidr_ipv4(kube_control_requirer, relation_data):
+    with mock.patch.object(
+        KubeControlRequirer, "relation", new_callable=mock.PropertyMock
+    ) as mock_prop:
+        relation = mock_prop.return_value
+        relation_data["cluster-cidr"] = "192.168.0.0/16"
+        relation.units = ["remote/0"]
+        relation.data = {"remote/0": relation_data}
+        cidr = kube_control_requirer.get_cluster_cidr()
+        assert cidr == ip_network("192.168.0.0/16")
+
+
+def test_cluster_cidr_ipv6(kube_control_requirer, relation_data):
+    with mock.patch.object(
+        KubeControlRequirer, "relation", new_callable=mock.PropertyMock
+    ) as mock_prop:
+        relation = mock_prop.return_value
+        relation_data["cluster-cidr"] = "2002:0:0:1234::0/64"
+        relation.units = ["remote/0"]
+        relation.data = {"remote/0": relation_data}
+        cidr = kube_control_requirer.get_cluster_cidr()
+        assert cidr == ip_network("2002:0:0:1234::0/64")
+

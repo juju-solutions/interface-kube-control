@@ -11,7 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
+from ipaddress import ip_network, IPv4Network, IPv6Network
+from typing import List, Union
 from charms.reactive import (
     Endpoint,
     toggle_flag,
@@ -73,6 +74,11 @@ class KubeControlRequirer(Endpoint):
             self.expand_name("{endpoint_name}.api_endpoints.available"),
             self.is_joined and self.get_api_endpoints(),
         )
+        toggle_flag(
+            self.expand_name("{endpoint_name}.cluster_cidr.available"),
+            self.is_joined and self.get_cluster_cidr(),
+        )
+
 
     def get_auth_credentials(self, user):
         """
@@ -197,3 +203,11 @@ class KubeControlRequirer(Endpoint):
         """Returns a list of lables configured on the control-plane nodes."""
         labels = self.all_joined_units.received.get("labels", [])
         return [Label.decode(_) for _ in labels]
+
+    def get_cluster_cidr(self) -> Union[None, IPv4Network, IPv6Network]:
+        """Get the Pods cluster-cidr shared from control-plane nodes."""
+        cidr = self.all_joined_units.received.get("cluster-cidr")
+        try:
+            return ip_network(cidr)
+        except ValueError:
+            return None

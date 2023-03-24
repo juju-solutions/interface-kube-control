@@ -7,6 +7,7 @@ style rather than the reactive style.
 """
 
 import base64
+from ipaddress import ip_network
 import logging
 from os import PathLike
 from pathlib import Path
@@ -223,3 +224,9 @@ class KubeControlRequirer(Object):
     def get_controller_labels(self) -> List[Label]:
         """Returns a list of lables configured on the control-plane nodes."""
         return (self.is_ready and self._data.labels) or []
+
+    def get_cluster_cidr(self) -> Optional[ip_network]:
+        """
+        Tag for identifying resources that are part of the cluster.
+        """
+        return self._data.cluster_cidr if self.is_ready else None
