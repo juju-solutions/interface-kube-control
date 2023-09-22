@@ -86,7 +86,7 @@ class KubeControlProvides:
 
     def set_image_registry(self, image_registry) -> None:
         for relation in self.relations:
-            relation.data[self.unit]["image-registry"] = image_registry
+            relation.data[self.unit]["registry-location"] = image_registry
 
     def set_labels(self, labels) -> None:
         value = json.dumps(labels)
