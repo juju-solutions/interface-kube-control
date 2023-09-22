@@ -32,6 +32,18 @@ class KubeControlProvides:
             relation.data[self.unit]["creds"] = ""
 
     @property
+    def ingress_addresses(self) -> List[str]:
+        return [
+            # RFC 5280 section 4.2.1.6: "For IP version 6 ... the octet string
+            # MUST contain exactly sixteen octets." We'll use .exploded to be
+            # safe.
+            addr.exploded
+            for addr in self.charm.model.get_binding(
+                self.endpoint
+            ).network.ingress_addresses
+        ]
+
+    @property
     def relations(self) -> List[Relation]:
         return self.charm.model.relations[self.endpoint]
 
