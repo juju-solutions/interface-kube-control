@@ -16,14 +16,12 @@ class KubeControlProvides:
 
     @property
     def auth_requests(self) -> List[AuthRequest]:
-        requests = []
-        for relation in self.relations:
-            for unit in relation.units:
-                user = relation.data[unit].get("kubelet_user")
-                group = relation.data[unit].get("auth_group")
-                if user and group:
-                    request = AuthRequest(unit=unit.name, user=user, group=group)
-                    requests.append(request)
+        requests = [
+            AuthRequest(unit=unit.name, user=user, group=group)
+            for relation in self.relations
+            for unit in relation.units
+            if (user := relation.data[unit].get("kubelet_user")) and (group := relation.data[unit].get("auth_group"))
+        ]
         requests.sort()
         return requests
 
