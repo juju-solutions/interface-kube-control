@@ -8,7 +8,7 @@ AuthRequest = namedtuple("KubeControlAuthRequest", ["unit", "user", "group"])
 
 
 class KubeControlProvides:
-    """Implemenets the Provides side of the kube-control interface."""
+    """Implements the Provides side of the kube-control interface."""
 
     def __init__(self, charm: CharmBase, endpoint: str):
         self.charm = charm
