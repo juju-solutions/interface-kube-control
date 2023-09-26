@@ -27,7 +27,7 @@ setup(
     zip_safe=True,
     install_requires=[
         "backports.cached-property",
-        "pydantic",
+        "pydantic<2",
         "ops",
     ],
 )
