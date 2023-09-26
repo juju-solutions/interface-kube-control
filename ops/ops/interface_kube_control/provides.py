@@ -21,7 +21,8 @@ class KubeControlProvides:
             AuthRequest(unit=unit.name, user=user, group=group)
             for relation in self.relations
             for unit in relation.units
-            if (user := relation.data[unit].get("kubelet_user")) and (group := relation.data[unit].get("auth_group"))
+            if (user := relation.data[unit].get("kubelet_user"))
+            and (group := relation.data[unit].get("auth_group"))
         ]
         requests.sort()
         return requests
@@ -53,8 +54,7 @@ class KubeControlProvides:
         return self.charm.model.relations[self.endpoint]
 
     def set_api_endpoints(self, endpoints) -> None:
-        """Send the list of API endpoint URLs to which workers should connect.
-        """
+        """Send the list of API endpoint URLs to which workers should connect."""
         endpoints = json.dumps(endpoints)
         for relation in self.relations:
             relation.data[self.unit]["api-endpoints"] = endpoints
@@ -81,8 +81,7 @@ class KubeControlProvides:
             relation.data[self.unit]["sdn-ip"] = address
 
     def set_dns_domain(self, domain) -> None:
-        """Send DNS domain to the remote units for use in Kubelet configuration.
-        """
+        """Send DNS domain to the remote units for use in Kubelet configuration."""
         for relation in self.relations:
             relation.data[self.unit]["domain"] = domain
 
@@ -140,5 +139,5 @@ class KubeControlProvides:
 
     @property
     def unit(self) -> Unit:
-        """ Local unit. """
+        """Local unit."""
         return self.charm.unit
