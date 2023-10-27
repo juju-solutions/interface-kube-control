@@ -2,6 +2,7 @@ import json
 from collections import namedtuple
 
 from ops import CharmBase, Relation, Unit
+from .model import Creds
 from typing import List
 
 AuthRequest = namedtuple("KubeControlAuthRequest", ["unit", "user", "group"])
@@ -128,11 +129,13 @@ class KubeControlProvides:
         creds = {}
         for relation in self.relations:
             creds.update(json.loads(relation.data[self.unit].get("creds", "{}")))
-        creds[request.user] = {
-            "client_token": client_token,
-            "kubelet_token": kubelet_token,
-            "proxy_token": proxy_token,
-        }
+        creds[request.user] = Creds(
+            client_token=client_token,
+            kubelet_token=kubelet_token,
+            proxy_token=proxy_token,
+            scope=request.unit,
+        ).dict()
+
         value = json.dumps(creds)
         for relation in self.relations:
             relation.data[self.unit]["creds"] = value
