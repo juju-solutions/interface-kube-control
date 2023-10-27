@@ -101,7 +101,7 @@ class KubeControlProvides:
 
     def set_has_external_cloud_provider(self, has_xcp) -> None:
         """Send indicator to remote units that an external cloud provider is in use."""
-        value = str(has_xcp).title()
+        value = str(has_xcp).lower()
         for relation in self.relations:
             relation.data[self.unit]["has-xcp"] = value
 
