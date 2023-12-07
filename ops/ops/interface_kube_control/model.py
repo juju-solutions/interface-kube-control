@@ -62,7 +62,7 @@ class Data(BaseModel):
     enable_kube_dns: bool = Field(alias="enable-kube-dns")
     has_xcp: Json[bool] = Field(alias="has-xcp")
     port: Json[int] = Field(alias="port")
-    sdn_ip: str = Field(alias="sdn-ip")
+    sdn_ip: Optional[str] = Field(default=None, alias="sdn-ip")
     registry_location: str = Field(alias="registry-location")
     taints: Optional[Json[List[Taint]]] = Field(alias="taints")
     labels: Optional[Json[List[Label]]] = Field(alias="labels")
